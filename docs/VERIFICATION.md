@@ -12,6 +12,8 @@
 - Existing desktop install was privately backed up, updated at the same path without adding a manifest key, and reloaded. Its extension ID and complete local storage remained identical. No automated typing was performed in that profile. Real signed-in menu placement and keyboard dashboard access were checked separately.
 - Public screenshots use deliberately synthetic data in the disposable profile. No private data/profile/archive is published.
 
+- GitHub CI checks passed. The draft asset was downloaded, its own SHA-256 verified, and all 16 extracted runtime files compared byte-for-byte with source. Python/zlib versions may produce different compressed archive bytes; determinism was checked with a fixed local toolchain.
+
 ## Limits
 
 Windows/macOS and alternative browsers are untested. Only standard non-composition BMP character input is supported; exclusions are described in README. Internal Monkeytype hooks and menu markup may change. Polling can miss extremely rapid successive tests. Pending retries are tab-memory only and require keeping the tab open until Saved. Storage quota errors are covered with failure injection, not by filling the user's browser disk. Deduplication covers the most recent 10,000 hashes. There is no Web Store or automatic updater, account import, or sync.

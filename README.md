@@ -55,7 +55,7 @@ npm run package   # ready-to-load ZIP and SHA256SUMS
 
 Load `dist/extension` in a disposable Chrome profile. `npm run install:local -- --target /absolute/existing/install/path [--dry-run]` explicitly copies runtime files into a separate install folder; it does not reload Chrome. Normal builds never install into your home directory.
 
-The ZIP is deterministic for the same source. Verify with `sha256sum -c SHA256SUMS` from the directory containing both downloaded assets (or `Get-FileHash` on Windows). CI runs accounting, background/recovery tests, syntax checks, and packaging; live Monkeytype/browser acceptance is a separate release check.
+The ZIP is deterministic for the same source and Python/zlib toolchain; compression versions can change archive bytes without changing runtime files. Always verify downloads against the release’s own SHA256SUMS. Verify with `sha256sum -c SHA256SUMS` from the directory containing both downloaded assets (or `Get-FileHash` on Windows). CI runs accounting, background/recovery tests, syntax checks, and packaging; live Monkeytype/browser acceptance is a separate release check.
 
 ## Attribution
 
