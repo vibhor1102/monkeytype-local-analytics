@@ -58,7 +58,7 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     await view.locator('#reset').evaluate(button => button.click());
     await page.evaluate(() => window.postMessage({channel:'monkeytype-local-analytics-v1',type:'view',operation:'reset'},location.origin));
     assert.equal((await recovery.evaluate(() => chrome.storage.local.get('analytics'))).analytics.tests, 1);
-    await view.locator('.scope a').click(); assert.equal(await view.locator('details').getAttribute('open'), '');
+    await view.locator('#about').click(); assert.equal(await view.locator('#data-details').getAttribute('open'), '');
     await page.setViewportSize({width:390,height:844}); assert.equal(await page.evaluate(() => document.documentElement.scrollWidth),390);
     await page.setViewportSize({width:1400,height:1000});
     await page.locator('[data-nav-item="settings"]').click();

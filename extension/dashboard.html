@@ -1,37 +1,22 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Monkeytype Typing Mistakes</title>
-  <link rel="stylesheet" href="dashboard.css">
-  <script src="core.js" defer></script><script src="dashboard.js" defer></script>
-</head>
-<body>
-  <main>
-    <header><div><p class="eyebrow">MONKEYTYPE / TYPING MISTAKES</p><h1>Typing mistakes<span>.</span></h1></div><button id="expand" class="quiet" title="Open dashboard in a tab">↗ <span>Open in tab</span></button></header>
-    <p class="intro">Your character mistakes, including the ones you corrected. Private to this browser.</p>
-    <div class="status"><span class="dot"></span><span id="status" role="status">Open Monkeytype and finish a test to start collecting.</span></div>
-    <section class="stats" aria-label="Typing totals">
-      <article><span>Tests</span><strong id="tests">0</strong></article>
-      <article><span>Character attempts</span><strong id="attempts">0</strong></article>
-      <article><span>Mistakes</span><strong id="errors">0</strong></article>
-      <article><span>Error rate</span><strong id="rate">—</strong></article>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Monkeytype Typing Mistakes</title><link rel="stylesheet" href="dashboard.css"><script src="core.js" defer></script><script src="dashboard.js" defer></script></head>
+<body><main data-state="loading">
+  <section class="overview" aria-label="Typing mistakes overview">
+    <header><div><h1 tabindex="-1"><svg viewBox="0 0 128 128" aria-hidden="true"><path d="M12 112V76h24v36zm40 0V44h24v68zm40 0V12h24v100z"/></svg>typing mistakes</h1><p class="scope">Saved on this browser · not synced with your account <button id="about" class="text-button">about this data</button></p></div><div class="header-actions"><button id="focus-jump" class="text-button mobile-jump">practice focus ↓</button><button id="collection" class="connection" aria-controls="collection-details"><span class="dot" aria-hidden="true"></span><span id="connection-label">connecting</span></button><a class="back" href="/">back to typing →</a><button id="expand" class="text-button">Open on Monkeytype →</button></div></header>
+    <div class="stats" aria-label="Typing totals"><article><span>tests recorded</span><strong id="tests">—</strong></article><article><span>character attempts</span><strong id="attempts">—</strong></article><article><span>mistakes</span><strong id="errors">—</strong></article><article><span>error rate</span><strong id="rate">—</strong></article></div>
+  </section>
+  <div id="loading" role="status" class="loading">Loading saved mistakes…</div>
+  <div id="alert" role="alert" class="alert" hidden><span id="alert-text"></span><button id="retry">Retry</button></div>
+  <div class="analysis-grid">
+    <section class="breakdown panel" aria-labelledby="keys-title"><div class="section-head"><h2 id="keys-title">character breakdown</h2><button id="clear" class="text-button" hidden>clear filters</button></div>
+      <div class="filters"><label>language<select id="language"><option value="">All languages</option></select></label><label>layout setting<select id="layout"><option value="">All layouts</option></select></label><label>rank by<select id="sort"><option value="errors">Mistakes</option><option value="rate">Error rate</option><option value="attempts">Attempts</option></select></label><label>min. attempts<input id="minimum" type="number" min="1" max="1000000" value="1"></label></div>
+      <p id="filter-summary" class="muted">Each row describes the character expected at that position.</p>
+      <div id="empty" class="empty" hidden><h3 id="empty-title">Your first test starts the picture</h3><p id="empty-copy">Finish a standard Monkeytype test to record character attempts. Corrected mistakes count too.</p><a href="https://monkeytype.com/" data-go-typing>back to typing →</a></div>
+      <p id="table-hint" class="scroll-hint muted" hidden>Scroll sideways for all columns →</p><div class="table-wrap" id="table-wrap" tabindex="0" role="region" aria-label="Character breakdown. Scroll horizontally for more columns." aria-describedby="table-hint" hidden><table><thead><tr><th scope="col">Expected</th><th scope="col">Mistakes</th><th scope="col">Attempts</th><th scope="col">Error rate</th><th scope="col">Typed instead</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <button id="show-more" class="more-rows" hidden>show all characters</button><p id="additional" class="muted accounting"></p>
     </section>
-    <section class="practice" aria-labelledby="practice-title"><p class="eyebrow">YOUR NEXT FOCUS</p><h2 id="practice-title">Build a useful sample</h2><p id="practice-copy">Finish a few standard tests. Characters with at least 20 attempts will guide your practice.</p><div id="focus-keys" aria-label="Practice characters"></div></section>
-    <section aria-labelledby="keys-title">
-      <div class="section-head"><h2 id="keys-title">Where mistakes happen</h2><span id="updated" class="muted"></span></div>
-      <div class="filters">
-        <label>Language<select id="language"><option value="">All languages</option></select></label>
-        <label>Layout setting<select id="layout"><option value="">All layouts</option></select></label>
-        <label>Rank by<select id="sort"><option value="errors">Mistake count</option><option value="rate">Error rate</option><option value="attempts">Attempts</option></select></label>
-        <label>Min. attempts<input id="minimum" type="number" min="1" max="1000000" value="20"></label>
-      </div>
-      <div id="empty" class="empty"><div class="key-symbol">a<span>?</span></div><h3>Your next test starts the picture.</h3><p>Visit <a href="https://monkeytype.com/" target="_blank" rel="noreferrer">monkeytype.com</a> and finish a test. Corrected mistakes count too.</p><p>After installing or updating this extension, reload any open Monkeytype tabs.</p></div>
-      <div class="table-wrap" id="table-wrap" hidden><table><thead><tr><th scope="col">Expected</th><th scope="col">Mistakes</th><th scope="col">Attempts</th><th scope="col">Error rate</th><th scope="col">Typed instead</th></tr></thead><tbody id="rows"></tbody></table></div>
-      <p id="additional" class="muted"></p>
-    </section>
-    <details><summary>Accounting, compatibility & privacy</summary><p>Each character insertion is an attempt at the character Monkeytype expected at that position. A correction keeps the original mistake; typing the replacement adds another attempt. Spaces and punctuation count. Early word endings count at the current position; untyped remaining letters are not counted as attempts.</p><p>Extra keystrokes beyond the target word are listed separately. Error rates here describe character attempts and can differ from Monkeytype’s overall accuracy. For a useful rate comparison, raise “Min. attempts” to 20 or more.</p><p>Finished standard tests are supported. Zen, bailed-out tests, Funbox, opposite-shift and composition input are excluded. This tracks characters, not inferred physical finger movements. “Layout setting” is Monkeytype’s configured layout; “default” does not identify your operating system’s actual layout.</p><p>Data belongs to this browser profile, across Monkeytype sign-ins. Raw test text, passwords and account identifiers are not stored. No analytics are uploaded or synced. Browser data clearing or uninstalling can erase them; export a backup to keep them.</p><p>Only tests started with this extension connected are collected. Reload Monkeytype after extension updates. Keep the tab open until it reports Saved: pending saves live in the tab and can be lost if you close it. The last 10,000 test identities prevent duplicates; reintroducing older logs can count again.</p></details>
-    <footer><div class="tools"><button id="export">Export backup</button><button id="restore">Restore backup</button><input id="import" type="file" accept="application/json,.json" hidden><button id="reset" class="quiet">Reset</button><button id="undo" class="quiet" hidden>Undo last reset / restore</button></div><p class="privacy">Local storage · No account access · No uploads or sync. Independent project, not affiliated with Monkeytype.</p><p id="notice" role="status"></p></footer>
-  </main>
-</body>
-</html>
+    <aside class="insights" aria-label="Practice insights"><section class="practice panel" aria-labelledby="practice-title"><p class="eyebrow">practice focus</p><h2 id="practice-title">Building your sample</h2><p id="practice-copy" class="muted">At least 20 attempts per character.</p><div id="focus-keys"></div><button id="characters-jump" class="text-button mobile-jump">back to characters ↑</button></section><section class="patterns panel" aria-labelledby="patterns-title"><h2 id="patterns-title">common substitutions</h2><p class="muted">expected → typed instead</p><div id="patterns"></div></section></aside>
+  </div>
+  <footer><div class="footer-summary"><span id="updated" class="muted"></span><span class="muted">Correcting keeps the mistake; typing the replacement adds an attempt.</span></div><details id="data-details"><summary>accounting &amp; privacy</summary><p>Counts belong to expected characters, including spaces and punctuation—not physical keys or fingers. Early word endings count at the current position; untyped letters are not invented as attempts. Extra insertions and manual deletion actions are separate.</p><p>Practice focus compares error rates only after 20 attempts per character. Smaller samples remain visible in the table. These are practice hints; this rate can differ from Monkeytype’s overall accuracy.</p><p>Statistics belong to this browser profile across Monkeytype sign-ins. No raw text, account identifiers, uploads, or sync. Displayed aggregates are visible to the page. Uninstalling or clearing browser data can erase storage; keep a backup.</p></details><details id="collection-details"><summary>collection status &amp; compatibility</summary><p id="status" role="status">Waiting for this page’s collection status.</p><p>Finished standard tests are supported. Zen, bailed-out tests, Funbox, opposite-shift, composition/IME, and surrogate-pair characters are excluded. Automatic input/deletion is excluded. Only tests started after connection are eligible. “Default” layout does not identify your operating system layout.</p><p>Pending saves live in the typing tab; keep it open until saved. Polling can miss tests completed entirely between checks. The latest 10,000 test hashes prevent duplicates. After an extension update, reload idle Monkeytype tabs to reconnect.</p></details><details id="data-tools"><summary>backups &amp; data</summary><p>Restore and reset keep one previous snapshot. Restoring a snapshot replaces all current data, including newer tests; export first.</p><div class="tools"><button id="export" disabled>Export backup</button><button id="restore" disabled>Restore backup</button><input id="import" type="file" accept="application/json,.json" hidden><button id="reset" disabled>Reset data</button><button id="undo" disabled hidden>Restore previous snapshot</button></div><p id="notice" role="status"></p></details></footer>
+</main></body></html>

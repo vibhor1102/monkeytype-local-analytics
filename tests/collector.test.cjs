@@ -4,7 +4,7 @@ async function setup() {
   let completed, active, interval, keydown, message, failHook = false;
   const posts = [], timers = [];
   const window = {config: {language: 'english', layout: 'default', funbox: []}, lastEventLog: () => {if (failHook) throw Error('hook failed'); return completed;}, currentEventLog: () => active, postMessage: value => posts.push(value), addEventListener: (_, f) => message = f};
-  vm.runInNewContext(fs.readFileSync('extension/collector.js', 'utf8'), {window, document: {addEventListener: (_, f) => keydown = f}, location: {origin: 'https://monkeytype.com'}, MonkeytypeLocalAnalyticsCore: core, crypto: require('node:crypto').webcrypto, TextEncoder, setTimeout: f => timers.push(f), setInterval: f => interval = f, Date});
+  vm.runInNewContext(fs.readFileSync('extension/collector.js', 'utf8'), {window, document: {querySelector:()=>null, addEventListener: (_, f) => keydown = f}, location: {origin: 'https://monkeytype.com'}, MonkeytypeLocalAnalyticsCore: core, crypto: require('node:crypto').webcrypto, TextEncoder, setTimeout: f => timers.push(f), setInterval: f => interval = f, Date});
   const tick = async () => {interval(); await new Promise(r => setTimeout(r, 15));};
   return {posts, window, tick, fail: () => failHook = true,
     finish: async date => {
@@ -31,5 +31,5 @@ test('navigation flush waits for completed summary acknowledgement before allowi
   const c = await setup(); await c.finish(300); c.navigate('route-token'); await c.tick();
   assert.equal(c.posts.some(p => p.type === 'navigation-ready'), false);
   const summary = c.posts.find(p => p.type === 'summary').value; c.ack(summary.id);
-  assert.equal(c.posts.at(-1).type, 'navigation-ready'); assert.equal(c.posts.at(-1).value, 'route-token');
+  assert.equal(c.posts.at(-1).type, 'navigation-ready'); assert.equal(c.posts.at(-1).value.token, 'route-token'); assert.equal(c.posts.at(-1).value.activity, 'idle');
 });

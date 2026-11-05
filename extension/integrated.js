@@ -1,106 +1,143 @@
-/* Same-tab hash destination; no router/engine monkey-patching or page-world data API. */
+/* An extension-owned hash on a real native route. Native links own engine lifecycle. */
 (() => {
   "use strict";
-  const route = () => location.pathname === "/" && ["#typing-mistakes", "#local-analytics"].includes(location.hash);
-  let canMount = route();
-  let host, dispose, hidden = new Map(), priorTitle, lastMain;
+  const hashes = ["#typing-mistakes", "#local-analytics"];
+  const route = () => hashes.includes(location.hash);
+  let host, controller, priorTitle, lastMain, opening, syncing = false, dataReady = false, initialFocusDone = false;
+  const hidden = new Map();
   const marker = "data-mla-page";
-  async function open() {
-    if (route()) {sync(); return;}
-    // Flush the last completed test before a full navigation can discard its log.
+  const initialRoute = route();
+  let entryApproved = initialRoute;
+  const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
+  function nativeLink(path) {return (path === "/" ? document.querySelector('header [data-nav-item="test"]') : null) || document.querySelector(`header a[href="${path}"]`);}
+  async function navigate(path) {
+    const link = nativeLink(path);
+    if (!link) throw Error("Monkeytype navigation is not ready. Try again in a moment.");
+    link.click();
+    const start = performance.now();
+    while (location.pathname !== path && performance.now() - start < 1800) await new Promise(resolve => setTimeout(resolve, 25));
+    if (location.pathname !== path) throw Error("Monkeytype kept the current page open. Finish the test or wait for it to finish loading, then try again.");
+  }
+  function inspectAndFlush() {
     const channel = "monkeytype-local-analytics-v1", token = crypto.randomUUID();
-    await new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const cleanup = () => {clearTimeout(timer); window.removeEventListener("message", receive);};
       const receive = event => {
-        if (event.source === window && event.origin === location.origin && event.data?.channel === channel && event.data.type === "navigation-ready" && event.data.value === token) {cleanup(); resolve();}
+        if (event.source === window && event.origin === location.origin && event.data?.channel === channel && event.data.type === "navigation-ready" && event.data.value?.token === token) {cleanup(); resolve(event.data.value.activity);}
       };
-      const timer = setTimeout(() => {cleanup(); reject(Error("Saving is still pending. Keep this tab open and try again."));}, 4000);
+      const timer = setTimeout(() => {cleanup(); reject(Error("A save is still pending. Keep this tab open and retry."));}, 4000);
       window.addEventListener("message", receive);
       window.postMessage({channel, type:"navigate-request", value:token}, location.origin);
     });
-    // A real document navigation ends an active test through its normal lifecycle.
-    const hashOnly = location.pathname === "/" && !location.search;
-    location.assign("/#typing-mistakes");
-    if (hashOnly) location.reload();
+  }
+  function announceError(message) {
+    let box = document.querySelector("[data-mla-navigation-error]");
+    if (!box) {
+      box = document.createElement("div"); box.setAttribute("data-mla-navigation-error", ""); box.setAttribute("role", "alert");
+      box.style.cssText = "position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:9999;max-width:90vw;padding:1rem;background:var(--sub-alt-color);color:var(--text-color);border:1px solid var(--error-color);border-radius:.5rem";
+      document.body.append(box);
+    }
+    box.textContent = message; setTimeout(() => box.remove(), 8000);
+  }
+  function open() {
+    if (opening) return opening;
+    if (host && route()) {host.shadowRoot.querySelector("h1").focus(); return Promise.resolve();}
+    const menu = document.querySelector("[data-monkeytype-local-analytics]");
+    menu?.setAttribute("aria-busy", "true");
+    opening = (async () => {
+      const activity = await inspectAndFlush();
+      // Idle pages need no reload or authentication rehydration. An active test
+      // leaves through an existing native Link, preserving no-quit/busy guards.
+      if (activity !== "idle") {
+        await navigate("/about");
+        entryApproved = true; location.replace("#typing-mistakes");
+      } else {
+        entryApproved = true;
+        if (!route()) location.hash = "typing-mistakes";
+      }
+      await sync();
+    })().finally(() => {opening = undefined; menu?.removeAttribute("aria-busy");});
+    return opening;
   }
   function restore() {
-    dispose?.(); dispose = undefined; host?.remove(); host = undefined;
-    for (const [node, value] of hidden) {
-      node.style.display = value.display;
-      node.inert = value.inert;
-    }
+    controller?.dispose(); controller = undefined; dataReady = false; initialFocusDone = false;
+    host?.remove(); host = undefined;
+    for (const [node, value] of hidden) {node.style.display = value.display; node.inert = value.inert;}
     hidden.clear();
     if (priorTitle && document.title === "Typing mistakes | Monkeytype") document.title = priorTitle;
     priorTitle = undefined;
   }
-  function sync() {
-    if (!route()) {canMount = false; if (host) restore(); return;}
-    if (!canMount) {location.reload(); return;}
-    if (location.hash === "#local-analytics") {location.replace("#typing-mistakes"); return;}
-    const main = document.querySelector("main");
-    if (!main) return;
-    if (host && (!host.isConnected || main !== lastMain)) restore();
-    if (!host) {
-      lastMain = main; priorTitle = document.title;
-      host = document.createElement("section"); host.setAttribute(marker, "");
-      host.style.cssText = "display:block;grid-column:content;min-width:0;width:100%";
-      const root = host.attachShadow({mode: "open"});
-      const style = document.createElement("style");
-      style.textContent = globalThis.MLAViewAssets.css + "\n" + globalThis.MLAViewAssets.integratedCss;
-      const template = document.createElement("template"); template.innerHTML = globalThis.MLAViewAssets.html;
-      root.append(style, template.content.cloneNode(true));
-      root.querySelector("header").innerHTML = '<h1 tabindex="-1"><svg viewBox="0 0 128 128" aria-hidden="true"><path d="M12 112V76h24v36zm40 0V44h24v68zm40 0V12h24v100z"/></svg>typing mistakes</h1><a class="back" href="/">back to typing →</a>';
-      const scope = document.createElement("p"); scope.className = "scope";
-      scope.innerHTML = '<strong>On this browser</strong> · Not synced with your Monkeytype account. <a href="#data-details">About this data</a>';
-      root.querySelector("header").after(scope);
-      const intro = root.querySelector(".intro"); intro.textContent = "See which characters trip you up, including mistakes you corrected."; intro.className = "mistakes-intro";
-      root.querySelector("#keys-title").textContent = "Where mistakes happen";
-      const details = root.querySelector("details"); details.id = "data-details";
-      scope.querySelector("a").addEventListener("click", event => {event.preventDefault(); details.open = true; details.querySelector("summary").focus(); details.scrollIntoView({block:"nearest"});});
-      root.querySelector("#table-wrap").tabIndex = 0;
-      root.querySelector("#table-wrap").setAttribute("aria-label", "Character breakdown. Scroll horizontally for more columns.");
-      const emptyLink = root.querySelector("#empty a"); emptyLink.removeAttribute("target"); emptyLink.href = "/"; emptyLink.textContent = "Back to typing";
-      root.querySelector("#empty p").lastChild.textContent = " and finish a standard test. Corrected mistakes count too.";
-      // Keep filter typing and keyboard controls out of Monkeytype's global shortcuts.
-      for (const type of ["keydown", "keyup", "keypress", "beforeinput", "input"]) root.addEventListener(type, event => {
-        // Preserve Monkeytype's command palette while isolating test shortcuts.
-        if ((type === "keydown" || type === "keyup") &&
-            (["Escape", "Control", "Meta", "Shift", "Alt"].includes(event.key) ||
-             ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === "KeyP"))) return;
-        event.stopPropagation();
-      });
-      main.append(host);
-      dispose = globalThis.MLAView.mount(root, true);
-      root.querySelector("h1").focus({preventScroll: true});
-    }
-    host.style.colorScheme = document.body.classList.contains("darkMode") ? "dark" : "light";
-    document.title = "Typing mistakes | Monkeytype";
-    // Leave the site's shell intact. Suppress only its routed content; restore the
-    // exact inline display/inert values when normal SPA navigation leaves our hash.
-    for (const child of main.children) if (child !== host && !hidden.has(child)) {
-      hidden.set(child, {display: child.style.display, inert: child.inert});
-      child.style.display = "none"; child.inert = true;
-    }
+  async function sync() {
+    if (!route()) {entryApproved = false; if (host) restore(); return;}
+    if (syncing) return;
+    syncing = true;
+    try {
+      if (!entryApproved) {
+        const activity = await inspectAndFlush();
+        if (activity !== "idle") {await navigate("/about"); location.replace("#typing-mistakes");}
+        entryApproved = true;
+      }
+      if (location.hash === "#local-analytics") {location.replace("#typing-mistakes");}
+      const main = document.querySelector("main");
+      if (!main || !route()) return;
+      if (host && (!host.isConnected || main !== lastMain)) restore();
+      if (!host) {
+        lastMain = main; priorTitle = document.title;
+        host = document.createElement("section"); host.setAttribute(marker, "");
+        host.style.cssText = "display:block;grid-column:content;min-width:0;width:100%";
+        const root = host.attachShadow({mode:"open"});
+        const style = document.createElement("style"); style.textContent = globalThis.MLAViewAssets.css + "\n" + globalThis.MLAViewAssets.integratedCss;
+        const template = document.createElement("template"); template.innerHTML = globalThis.MLAViewAssets.html;
+        root.append(style, template.content.cloneNode(true));
+        root.querySelector("#expand").hidden = true;
+        root.querySelector("main").setAttribute("role","region");
+        root.querySelector("main").setAttribute("aria-label","Typing mistakes");
+        root.querySelector(".back").addEventListener("click", event => {event.preventDefault(); void navigate("/").then(async () => {
+          if (route()) location.hash = "";
+          await sync(); await nextFrame();
+          document.querySelector('[data-nav-item="test"]')?.focus();
+        }).catch(error => announceError(error.message));});
+        for (const link of root.querySelectorAll('[data-go-typing]')) link.addEventListener("click", event => {event.preventDefault(); root.querySelector(".back").click();});
+        for (const type of ["keydown", "keyup", "keypress", "beforeinput", "input"]) root.addEventListener(type, event => {
+          const control = event.composedPath()[0];
+          // Escape belongs to a native select while it is being used; elsewhere
+          // preserve the site's command palette, including modifier releases.
+          if ((type === "keydown" || type === "keyup") &&
+              ((event.key === "Escape" && control?.tagName !== "SELECT") || ["Control","Meta","Shift","Alt"].includes(event.key) || ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === "KeyP"))) return;
+          event.stopPropagation();
+        });
+        main.append(host);
+        controller = globalThis.MLAView.mount(root, true);
+        const currentHost = host;
+        void controller.ready.then(() => {if (host === currentHost && route()) {dataReady=true;controller.restorePosition();requestAnimationFrame(()=>void sync());}});
+      }
+      host.style.colorScheme = document.body.classList.contains("darkMode") ? "dark" : "light";
+      document.title = "Typing mistakes | Monkeytype";
+      if (dataReady && !initialFocusDone && !document.body.classList.contains("loading") && !document.querySelector("footer")?.inert && !document.querySelector("dialog[open]")) {
+        initialFocusDone = true;
+        if (!host.shadowRoot.activeElement) host.shadowRoot.querySelector("h1").focus({preventScroll:true});
+      }
+      for (const child of main.children) if (child !== host && !hidden.has(child)) {
+        hidden.set(child, {display:child.style.display, inert:child.inert}); child.style.display = "none"; child.inert = true;
+      }
+    } catch (error) {announceError(error.message);}
+    finally {syncing = false;}
   }
   globalThis.MLAIntegration = {open};
   chrome.runtime.onMessage.addListener((message, sender, respond) => {
     if (sender.id !== chrome.runtime.id || message.type !== "open-analytics") return;
-    respond({ok: true}); setTimeout(() => void open().catch(error => {
-      const button = document.querySelector("[data-monkeytype-local-analytics]");
-      if (button) button.title = error.message;
-    }), 0);
+    open().then(() => respond({ok:true}), error => {announceError(error.message); respond({ok:false,error:error.message});});
+    return true;
   });
-  window.addEventListener("hashchange", sync);
-  window.addEventListener("popstate", sync);
-  // SPA pushState does not emit a browser event. Poll only the URL, without
-  // wrapping the site's history methods or inspecting its internal router.
+  window.addEventListener("hashchange", () => void sync()); window.addEventListener("popstate", () => void sync());
+  // Watch the actual URL without replacing history methods or private router APIs.
   let lastUrl = location.href;
-  setInterval(() => {if (lastUrl !== location.href) {lastUrl = location.href; sync();}}, 150);
+  setInterval(() => {if (lastUrl !== location.href) {lastUrl = location.href; void sync();}}, 50);
   let queued = false;
   new MutationObserver(() => {
     if (!route() || queued) return;
-    queued = true; setTimeout(() => {queued = false; sync();}, 100);
-  }).observe(document.body, {childList:true, subtree:true});
-  new MutationObserver(() => {if (host) host.style.colorScheme = document.body.classList.contains("darkMode") ? "dark" : "light";}).observe(document.body, {attributes:true, attributeFilter:["class"]});
-  sync();
+    queued = true; requestAnimationFrame(() => {queued = false; void sync();});
+  }).observe(document.body, {childList:true,subtree:true,attributes:true,attributeFilter:["inert"]});
+  new MutationObserver(() => {if (host) host.style.colorScheme = document.body.classList.contains("darkMode") ? "dark" : "light";void sync();}).observe(document.body,{attributes:true,attributeFilter:["class"]});
+  void sync();
 })();

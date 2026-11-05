@@ -12,7 +12,7 @@
     if (existing) {currentAnchor = anchor; currentButton = existing; return;}
 
     const button = document.createElement("a");
-    button.href = "/#typing-mistakes";
+    button.href = location.pathname + location.search + "#typing-mistakes";
     // Reuse the actual menu item's classes so theme, hover and focus match.
     button.className = anchor.className;
     button.setAttribute(marker, "");
@@ -28,7 +28,7 @@
       event.preventDefault();
       void globalThis.MLAIntegration.open().catch(error => {
         button.title = error.message;
-        button.textContent = "Save pending — try again";
+        button.textContent = "Could not open — retry";
         setTimeout(() => button.replaceChildren(icon, document.createTextNode("Typing mistakes")), 4000);
       });
     });

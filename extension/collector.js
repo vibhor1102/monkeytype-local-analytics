@@ -28,7 +28,12 @@
   }, true);
   function navigationReady() {
     if (navigation && !pending.length && !busy) {
-      post("navigation-ready", navigation); navigation = undefined;
+      let activity = "unknown";
+      try {
+        const events = window.currentEventLog?.()?.events;
+        if (Array.isArray(events)) activity = document.querySelector("#typingTest") && events.some(e => e.type === "timer" && e.data?.event === "start") && !events.some(e => e.type === "timer" && e.data?.event === "end") ? "active" : "idle";
+      } catch { /* A native guarded route is the conservative fallback. */ }
+      post("navigation-ready", {token:navigation, activity}); navigation = undefined;
     }
   }
   async function check() {

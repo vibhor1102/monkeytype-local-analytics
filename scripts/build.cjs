@@ -13,7 +13,7 @@ console.log(`Built ${manifest.name} ${manifest.version}: ${destination}`);
 // One canonical markup/style source for both the in-site page and recovery dashboard.
 const html = fs.readFileSync(path.join(source, 'dashboard.html'), 'utf8');
 const assets = {
-  html: html.match(/<main>[\s\S]*<\/main>/)[0],
+  html: html.match(/<main\b[^>]*>[\s\S]*<\/main>/)[0],
   css: fs.readFileSync(path.join(source, 'dashboard.css'), 'utf8'),
   integratedCss: fs.readFileSync(path.join(source, 'integrated.css'), 'utf8')
 };
