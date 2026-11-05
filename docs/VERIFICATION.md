@@ -1,35 +1,51 @@
-# Release verification — 1.4.0
+# Release checks: 1.4.0
 
-2026-11-05, Fedora Linux, Google Chrome 157.0.8103.38. The main experience is now **Typing mistakes** inside Monkeytype. These checks do not imply universal browser/platform support.
+[← Overview](../README.md) · [Supported tests](USAGE.md#what-gets-recorded) · [Development](DEVELOPMENT.md)
 
-## Completed
+Checked on **5 November 2026**, using Fedora Linux and Google Chrome **157.0.8103.38**. These are checks of this release, not a guarantee for every browser or future Monkeytype update.
 
-- 27 Node tests cover corrected-mistake accounting, automatic input, boundaries, exclusions, deduplication, malformed data, backup canonicalization, overflow without mutation, retries/write failures, atomic restore, reset/undo, sender restrictions, isolated view access, toolbar routing, settings snapshots, navigation waiting for a completed save, stale destructive confirmations, and toolbar flushes without storage-queue deadlock.
-- Syntax, manifest references, portable build, deterministic packaging with a fixed Python/zlib toolchain, and version consistency pass. The archive contains only runtime files with its manifest at the root.
-- `npm run test:browser` ran against the extracted ZIP using a temporary signed-out Chrome profile. It verified old bookmark migration to `/#typing-mistakes`, native header/footer, identical site/view fonts and theme variables, a real light-theme change through Monkeytype's picker, immediate custom-color inheritance, filter keyboard isolation, synthetic-reset/page-message rejection, 390px layout, native Settings navigation, Back, reload, and return to typing.
-- Idle menu entry now keeps the document and native route instead of repeating site boot/authentication loading. A trusted menu click during an active test leaves through an existing native navigation link without leaving a running timer underneath. A subsequent completed standard test with a wrong character/backspace/replacement still collected exactly one mistake and one manual deletion. No real account was used. Recovery-page reload retained the data.
-- Chrome's real extension reload mechanism was exercised while the in-page view was open; leaving through native navigation restored the original page rather than stranding it hidden. The options page remains a separate recovery fallback.
-- The renamed personal install retained its path-derived ID and complete local storage. The real signed-in menu entry was verified directly below User stats, opening the same-tab themed page by keyboard. No automated typing occurred in that profile.
-- Public screenshots use synthetic data in a disposable profile. No private data/profile/archive is published.
+## What was checked
 
-The optional `test:browser` uses a temporary signed-out profile; `test:view` tests compiled loading/failure/recovery behavior with synthetic data and no site requests. `test:ui` explicitly attaches to a current signed-in profile without Playwright defaults. It types no test, changes no analytics, scopes media emulation to its own test tab, and verifies cleanup on success and intentional failure. These checks remain separate from CI because they need installed Chrome and/or a live third-party deployment. Contributor setup is in README.
+| Area | Result |
+| --- | --- |
+| Recording | A completed live test with a wrong character, Backspace, and a correct replacement kept the mistake and counted the replacement. |
+| Saved data | Reloads kept the totals without counting the same test twice. Updating an existing install preserved its ID and complete saved data. |
+| Navigation | The page opened in the same Monkeytype tab. Idle entry avoided a reload; entry during a test used Monkeytype’s normal navigation. Back, Settings, bookmarks, and keyboard shortcuts were checked. |
+| Appearance | Site theme/font inheritance, custom colors, narrow-window layout, table scrolling, and practice links were checked. |
+| Backups and errors | Export, restore, reset, previous snapshots, invalid files, failed saves, and stale confirmations were checked. |
+| Loading and refresh | The page distinguished loading, failed reads, and older displayed data. Successful retries recovered without recreating unchanged table controls. |
+| Browser safeguards | Existing-profile UI checks left analytics and unrelated tabs’ theme preferences unchanged. Temporary light/dark overrides cleared after success and an intentional failure. |
+| Download | The GitHub ZIP’s checksum and all 18 extracted files matched the tested build. Browser checks passed from that downloaded ZIP. Anonymous public downloads worked. |
+| Automated checks | All 27 Node tests, syntax/manifest/version checks, packaging, and GitHub workflows passed. |
 
-## Additional 1.4.0 acceptance
+Automated typing used temporary signed-out profiles. No automated results were submitted to a real account. Public screenshots contain synthetic data.
 
-- Compact overview and side-by-side desktop panels place filters and character rows in the first viewport. Mobile starts with eight rows, a sticky character column, an explicit overflow hint, a show-all control, and keyboard-accessible jumps to/from practice focus.
-- Two independent Sol 6.1 auditors inspected the native/reference screenshots, final desktop/mobile views, source, and browser evidence. Both judged UI/UX and functionality at least on par for each page’s purpose. This is a scoped design assessment, not a formal accessibility certification.
-- The compiled controller passes initial read failure with disabled export and nonzero-looking placeholders avoided, successful retry, malformed optional preferences, stale-data retention/recovery with unchanged revision, and stable row/option identity. Export reads current storage; mutation controls serialize interactions and revision tokens reject stale confirmations.
-- Current-profile UI acceptance from typing recorded 567 ms to a ready view and 631 ms to an actionable account control, without replacing the document. Light/dark media overrides cleared on success and an intentional failure; all six unrelated tabs kept their media preferences and complete local storage was unchanged. The native account route separately stalled at “Downloading user data” before extension entry and timed out; this check used the existing signed-in typing route instead. An earlier account-route run recorded 441/519 ms.
-- The preserved installation was updated at its original path and ID; complete local storage remained unchanged. No automated results were submitted to the real account. Public screenshots are synthetic.
+One current-profile timing check from the typing page took about **0.6 seconds** to show the view and allow the account control to be clicked, without a document reload. This is one measurement, not a speed guarantee.
 
-## Limits and design boundaries
+## What hasn’t been checked
 
-The hash destination is provided by this extension. Without it, `https://monkeytype.com/#typing-mistakes` opens the regular site. Full server paths such as `/typing-mistakes` are not claimed. No Monkeytype router, engine, auth, submission, or configuration methods are replaced.
+- Windows, macOS, alternative browsers, or mobile browsers.
+- Every supported Chrome version; 111 is the declared minimum.
+- A formal screen-reader or assistive-technology audit.
+- Recording for excluded modes or input methods. See [supported tests](USAGE.md#what-gets-recorded).
 
-Entering from an idle page uses the existing document after flushing completed saves. Active/unknown state leaves through native navigation, preserving Monkeytype’s guards. If saves remain pending, the menu asks the user to keep the tab open and retry. Other native navigation may still unload pending tab-memory saves. The site header, footer, and active font/color variables remain intact. Scoped Shadow DOM prevents accidental CSS collisions; displayed aggregates can be inspected by page scripts, while storage access remains behind extension-isolated code. Data-changing controls require trusted events.
+Monkeytype’s native account page separately stalled at “Downloading user data” during one check, before the extension view opened. The existing-profile extension check passed from the typing page instead. This distinction matters when diagnosing a loading problem.
 
-Windows/macOS and alternative browsers are untested. Only standard non-composition BMP input is supported. Internal hooks and markup can change. Polling may miss extremely rapid tests; pending retries require an open tab. Storage quota errors use failure injection rather than filling the user's disk. Deduplication covers the most recent 10,000 hashes. No formal screen-reader audit is claimed. Native custom themes can have low contrast; the extension follows the user's chosen theme. No cloud/account sync or automatic updater is included.
+## Technical boundaries
 
-## Previous acceptance retained
+These details are mainly for contributors and people investigating a problem.
 
-Version 1.2.0 established export/restore, reset/Undo, malformed import handling, and v1 backup compatibility. Its same-path personal update preserved the extension ID and complete local storage. Version 1.4.0 keeps schema 1 and the same installation identity; the installer explicitly accepts the renamed display name. The old menu label and hash are retired in favor of Typing mistakes, with old bookmarks migrated.
+| Boundary | Meaning |
+| --- | --- |
+| Internal event format | The adapter supports version 1. Unknown formats stop collection rather than being guessed. Monkeytype can change this format or its menu markup. |
+| Polling | Tests completed entirely between 750 ms checks can be missed. |
+| Pending saves | Up to 100 summaries wait in typing-tab memory. Closing or reloading that tab before a save completes can lose them. |
+| Duplicate protection | Only the most recent 10,000 test hashes are retained. Reset keeps those hashes; backups carry their own window. |
+| Storage | Saved data and the previous snapshot share Chrome’s local extension quota, normally 10 MB. Imports are limited to 8 MB and can still exceed the quota. Quota failures were simulated, not tested by filling a real user’s storage. |
+| In-page display | Monkeytype scripts can see displayed stats. Extension storage operations stay in a separate script context; page messages don’t provide backup/reset commands. This isn’t a tamper-proof record. |
+| Navigation | The extension provides the `#typing-mistakes` view. It isn’t a server-provided Monkeytype route. Old `#local-analytics` bookmarks are recognised. |
+| Accessibility and themes | Native colors/fonts are inherited. Low-contrast custom themes can remain low contrast. |
+
+No Monkeytype typing engine, authentication, result submission, or configuration methods are replaced. Schema-1 backups remain compatible; legacy display-name updates preserve the existing install identity.
+
+For repeatable commands and the release process, see [development](DEVELOPMENT.md).

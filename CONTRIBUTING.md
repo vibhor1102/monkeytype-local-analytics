@@ -1,9 +1,25 @@
 # Contributing
 
-Use Node 24+ and Python 3. Run `npm run verify` before submitting a change. Keep runtime dependency-free, storage local, and permissions narrow. Tests must preserve corrected mistakes and exercise observable behavior, especially storage failure, recovery, duplicate handling, and event-format compatibility.
+Bug reports, useful ideas, and focused pull requests are welcome.
 
-Use a disposable signed-out Chrome profile for automated typing and destructive recovery tests. Existing-profile UI checks must type no tests or change analytics; use `noDefaults:true` when attaching over CDP, emulate media only on a dedicated test tab, and always clear overrides in `finally`, including failures. Never submit automated results to a real account, publish browser profiles/backups, or commit `.local/`, `dist/`, credentials, or personal paths. Test the extracted release ZIP. Document unsupported platforms and adapter limitations honestly.
+## Report a bug or suggest a change
 
-Keep storage schema 1 and path-derived install identities compatible. Version and test any future migration. Build must only write `dist/`; local installation is explicit. Public releases require tests, archive inspection, clean-profile Chrome acceptance, and checksum verification. See `docs/VERIFICATION.md`.
+Check [common fixes](docs/TROUBLESHOOTING.md) first, then [open an issue](https://github.com/vibhor1102/monkeytype-local-analytics/issues/new/choose). Include clear steps and browser/extension versions. For an idea, explain the problem it would solve.
 
-For security concerns, avoid attaching sensitive data to public issues. Report a minimal reproduction without private typing history or credentials; use GitHub private vulnerability reporting if enabled.
+Keep private backups, browser profiles, and account details out of issues and screenshots. Report security problems through [the private reporting route](SECURITY.md).
+
+## Change the code
+
+1. Read [the development guide](docs/DEVELOPMENT.md) and the repository’s [working instructions](AGENTS.md).
+2. Keep the change focused. Explain what users will notice and why it helps.
+3. Run `npm run verify` and any browser checks relevant to the change.
+4. In your pull request, describe the change and how you checked it. Say plainly what you couldn’t test.
+
+Please preserve these product choices:
+
+- Correcting a mistake must keep the original mistake; the replacement is another attempt.
+- Stats stay local, with narrow permissions and no runtime dependencies.
+- Existing saved data and install identities must survive updates. Plan and test migrations before changing storage.
+- Monkeytype’s typing, authentication, and result submission keep working normally.
+
+For automated typing and destructive recovery tests, use a temporary signed-out browser profile. Never submit automated results to someone’s account. More detail is in [browser testing](docs/DEVELOPMENT.md#browser-checks).

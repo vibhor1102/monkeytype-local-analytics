@@ -2,7 +2,9 @@
 
 This root checkout is authoritative. Read AGENTS.md and (when present) ignored `.local/HANDOFF.local.md` before implementation. Retired copies must not receive source edits.
 
-Version 1.2.0 was the first public distribution. Version 1.4.0 refines the integrated Typing mistakes page with compact panels, stable refreshes, and idle navigation without a document reload. The public repository slug stays stable. See README for installation/update, PRIVACY.md for data flow, and docs/VERIFICATION.md for acceptance evidence and limits. The public repository is https://github.com/vibhor1102/monkeytype-local-analytics.
+The public release listing starts at **1.4.0 — First public release**. Earlier same-day candidate releases and their downloads were removed at the user’s request; their source tags remain. The public repository URL stays stable: https://github.com/vibhor1102/monkeytype-local-analytics.
+
+Public documentation is task-based: README is the landing page; docs/SETUP.md covers installation, backups, updates and moves; docs/USAGE.md explains counts and support limits; docs/TROUBLESHOOTING.md covers recovery; PRIVACY.md explains data handling. Contributor commands live in docs/DEVELOPMENT.md and acceptance evidence in docs/VERIFICATION.md. Keep maintainer history and architecture out of the landing/setup copy.
 
 ## Product decisions
 

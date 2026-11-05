@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Installation and common fixes
+    url: https://github.com/vibhor1102/monkeytype-local-analytics/blob/main/docs/TROUBLESHOOTING.md
+    about: Try these steps before opening a bug report.
+  - name: Report a security problem privately
+    url: https://github.com/vibhor1102/monkeytype-local-analytics/security/advisories/new
+    about: Use private reporting for problems that could expose data or misuse the extension.
