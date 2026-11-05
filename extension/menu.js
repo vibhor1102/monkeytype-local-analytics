@@ -40,6 +40,12 @@
   }
 
   // Account menus can be recreated on sign-in or navigation without a reload.
-  new MutationObserver(mount).observe(document.body, {childList: true, subtree: true});
+  let scheduled = false;
+  new MutationObserver(() => {
+    if (currentButton?.isConnected && currentAnchor?.isConnected && currentButton.previousElementSibling === currentAnchor) return;
+    if (scheduled) return;
+    scheduled = true;
+    setTimeout(() => {scheduled = false; mount();}, 250);
+  }).observe(document.body, {childList: true, subtree: true});
   mount();
 })();

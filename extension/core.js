@@ -10,6 +10,10 @@
     if (!log || log.version !== 1 || !Array.isArray(log.events) || !Array.isArray(log.context?.targetWords)) {
       throw new Error("Monkeytype's event format is unsupported. No data collected.");
     }
+    if (log.events.length > 500000 || log.context.targetWords.length > 100000 ||
+        log.events.some(e => !e || typeof e.type !== "string" || !e.data || !Number.isFinite(e.testMs))) {
+      throw new Error("Malformed or oversized event log. Test excluded.");
+    }
     if (log.context.mode === "zen") return {skip: "Zen has no target text."};
     if (log.context.bailedOut) return {skip: "Bailed-out tests are excluded."};
     if (log.context.koreanStatus || log.events.some(e => e.type === "composition" || e.data?.isCompositionEnding || e.data?.inputType === "insertCompositionText")) {
@@ -19,7 +23,7 @@
     if (config.oppositeShiftMode && config.oppositeShiftMode !== "off") return {skip: "Opposite-shift tests are excluded."};
     const start = log.events.find(e => e.type === "timer" && e.data?.event === "start");
     const end = log.events.find(e => e.type === "timer" && e.data?.event === "end");
-    if (!start || !end || !Number.isFinite(start.data.date)) return {skip: "Waiting for a finished test."};
+    if (!start || !end || !Number.isFinite(start.data.date) || !Number.isFinite(end.data.date) || end.testMs < start.testMs) return {skip: "Waiting for a finished test."};
     const keys = dict();
     let extra = 0, attempts = 0, errors = 0, corrections = 0;
     for (const event of log.events) {
@@ -83,6 +87,9 @@
 
   function merge(state, summary) {
     validateSummary(summary);
+    validateBackup(state);
+    const original = state;
+    state = structuredClone(state);
     if (state.seen.includes(summary.id)) return false;
     const groupId = JSON.stringify([summary.language, summary.layout, summary.mode]);
     if (!own(state.groups, groupId)) state.groups[groupId] = {
@@ -100,19 +107,32 @@
     group.tests++; state.tests++; state.updated = summary.ended;
     // Bounded deduplication cache, not a history of the text typed.
     state.seen = [...state.seen.slice(-9999), summary.id];
+    validateBackup(state);
+    Object.assign(original, state);
     return true;
   }
 
   function validateBackup(state) {
     if (!state || state.version !== 1 || !state.groups || typeof state.groups !== "object" || Array.isArray(state.groups) || !Array.isArray(state.seen) || state.seen.length > 10000 || state.seen.some(id => !/^[a-f0-9]{64}$/.test(id))) throw new Error("Unsupported backup.");
-    let tests = 0;
+    if (Object.keys(state.groups).length > 5000) throw new Error("Too many backup groups.");
+    let tests = 0, lifetimeAttempts = 0;
     for (const [id, g] of Object.entries(state.groups)) {
       if (id !== JSON.stringify([g.language, g.layout, g.mode]) || !Number.isSafeInteger(g.tests) || g.tests < 1) throw new Error("Invalid backup group.");
       validateSummary({...g, id: "0".repeat(64), started: 0, ended: 0}, Number.MAX_SAFE_INTEGER);
-      tests += g.tests;
+      tests += g.tests; lifetimeAttempts += g.attempts;
     }
-    if (state.tests !== tests || !(state.updated === null || Number.isFinite(state.updated))) throw new Error("Invalid backup totals.");
-    return state;
+    if (!Number.isSafeInteger(lifetimeAttempts) || !Number.isSafeInteger(tests) || state.tests !== tests || !(state.updated === null || Number.isFinite(state.updated))) throw new Error("Invalid backup totals.");
+    // A canonical copy prevents unknown backup properties (including raw text) persisting.
+    const groups = dict();
+    for (const [id, g] of Object.entries(state.groups)) {
+      const keys = dict();
+      for (const [key, row] of Object.entries(g.keys)) keys[key] = {
+        attempts: row.attempts, errors: row.errors, substitutions: Object.fromEntries(Object.entries(row.substitutions))
+      };
+      groups[id] = Object.fromEntries(["language", "layout", "mode", "tests", "attempts", "errors", "extra", "corrections"].map(k => [k, g[k]]));
+      groups[id].keys = keys;
+    }
+    return {version: 1, groups, seen: [...state.seen], tests, updated: state.updated};
   }
   globalThis.MonkeytypeLocalAnalyticsCore = {analyze, blank, merge, validateSummary, validateBackup};
   if (typeof module !== "undefined") module.exports = globalThis.MonkeytypeLocalAnalyticsCore;

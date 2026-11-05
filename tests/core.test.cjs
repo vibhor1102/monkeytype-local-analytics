@@ -44,7 +44,7 @@ test('rejects unknown schema and malformed event positions', () => {
 test('excludes unsupported modes, composition, and opposite shift', () => {
   assert.match(analyze(log([], 'cat', {mode: 'zen'}), config).skip, /Zen/);
   assert.match(analyze(log([], 'cat', {bailedOut: true}), config).skip, /Bailed/);
-  assert.match(analyze(log([{type: 'composition', data: {event: 'start'}}]), config).skip, /Composition/);
+  assert.match(analyze(log([{type: 'composition', testMs: 10, data: {event: 'start'}}]), config).skip, /Composition/);
   assert.match(analyze(log([]), {...config, funbox: ['weakspot']}).skip, /Funbox/);
   assert.match(analyze(log([]), {...config, oppositeShiftMode: 'on'}).skip, /shift/);
 });
@@ -68,4 +68,21 @@ test('invalid page messages cannot insert negative or mismatched counts', () => 
   const s = summary([insert('x', false, 0)]);
   assert.throws(() => validateSummary({...s, attempts: -1}));
   assert.throws(() => validateSummary({...s, id: 'not-an-id'}));
+});
+test('unknown backup fields are discarded rather than retaining raw/private data', () => {
+  const state = blank(); merge(state, summary([insert('x', false, 0)]));
+  state.rawText = 'private'; Object.values(state.groups)[0].account = 'secret';
+  const clean = validateBackup(state);
+  assert.equal(clean.rawText, undefined); assert.equal(Object.values(clean.groups)[0].account, undefined);
+});
+test('overflow refuses a merge without mutating original data', () => {
+  const state = blank(), s = summary([insert('x', false, 0)]); merge(state, s);
+  const g = Object.values(state.groups)[0]; g.attempts = g.keys.c.attempts = Number.MAX_SAFE_INTEGER;
+  const before = JSON.stringify(state);
+  assert.throws(() => merge(state, {...s, id: 'b'.repeat(64)}));
+  assert.equal(JSON.stringify(state), before);
+});
+test('malformed event timestamps and unsupported versions fail closed', () => {
+  assert.throws(() => analyze(log([{...insert('c', true, 0), testMs: NaN}]), config), /Malformed/);
+  assert.throws(() => validateBackup({...blank(), version: 2}), /Unsupported/);
 });

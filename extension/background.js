@@ -7,9 +7,19 @@ const serialize = operation => {
   queue = result.catch(() => {});
   return result;
 };
+async function saveStatus(tabId, message) {
+  const {collectorTabs = {}} = await chrome.storage.session.get("collectorTabs");
+  collectorTabs[tabId] = {message, at: Date.now()};
+  for (const [id, value] of Object.entries(collectorTabs)) if (Date.now() - value.at > 60000) delete collectorTabs[id];
+  await chrome.storage.session.set({collectorTabs});
+}
+chrome.tabs.onRemoved.addListener(id => serialize(async () => {
+  const {collectorTabs = {}} = await chrome.storage.session.get("collectorTabs");
+  delete collectorTabs[id]; await chrome.storage.session.set({collectorTabs});
+}));
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
-  const fromSite = sender.tab && sender.url?.startsWith("https://monkeytype.com/");
-  const fromDashboard = sender.url === chrome.runtime.getURL("dashboard.html");
+  const fromSite = sender.tab && sender.frameId === 0 && sender.url?.startsWith("https://monkeytype.com/");
+  const fromDashboard = ["dashboard.html", "popup.html"].some(path => sender.url === chrome.runtime.getURL(path));
   if (!fromSite && !fromDashboard) return;
   serialize(async () => {
     if (fromSite && message.type === "open-dashboard") {
@@ -18,7 +28,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     }
     if (fromSite && message.type === "status") {
       if (typeof message.value !== "string" || message.value.length > 300) throw new Error("Invalid status.");
-      await chrome.storage.session.set({collectorStatus: {message: message.value, at: Date.now()}});
+      await saveStatus(sender.tab.id, message.value);
       return {ok: true};
     }
     if (fromSite && message.type === "summary") {
@@ -26,17 +36,17 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       const {analytics = core.blank()} = await chrome.storage.local.get("analytics");
       const added = core.merge(analytics, message.value);
       if (added) await chrome.storage.local.set({analytics});
-      await chrome.storage.session.set({collectorStatus: {message: "Saved — your latest test is in local analytics.", at: Date.now()}});
+      await saveStatus(sender.tab.id, "Saved — your latest test is in local analytics.");
       return {ok: true, added};
     }
     if (!fromDashboard) throw new Error("Unsupported request.");
     if (message.type === "get") {
-      return {ok: true, ...(await chrome.storage.local.get(["analytics", "undo"])), ...(await chrome.storage.session.get("collectorStatus"))};
+      return {ok: true, ...(await chrome.storage.local.get(["analytics", "undo"])), ...(await chrome.storage.session.get("collectorTabs"))};
     }
     if (message.type === "restore") {
-      core.validateBackup(message.value);
+      const replacement = core.validateBackup(message.value);
       const {analytics = core.blank()} = await chrome.storage.local.get("analytics");
-      await chrome.storage.local.set({undo: analytics, analytics: message.value});
+      await chrome.storage.local.set({undo: analytics, analytics: replacement});
       return {ok: true};
     }
     if (message.type === "reset") {

@@ -34,6 +34,14 @@ function render() {
   const minimum = Math.max(1, Number($("minimum").value) || 1);
   const rank = row => $("sort").value === "rate" ? row.errors / row.attempts : row[$("sort").value];
   const sorted = [...keys.values()].filter(r => r.attempts >= minimum).sort((a,b) => rank(b) - rank(a) || b.attempts - a.attempts || a.key.localeCompare(b.key));
+  const focus = [...keys.values()].filter(r => r.attempts >= 20 && r.errors > 0)
+    .sort((a, b) => b.errors / b.attempts - a.errors / a.attempts || b.errors - a.errors).slice(0, 3);
+  $("practice-title").textContent = focus.length ? "Slow down on these characters" : attempts ? "Keep building your sample" : "Your next test starts the picture";
+  $("practice-copy").textContent = focus.length ? "Highest error rates among characters with at least 20 attempts. Aim for clean, deliberate repetitions; this is a practice hint, not a diagnosis." : "Finish a few standard tests. Characters with at least 20 attempts and a mistake will appear here.";
+  $("focus-keys").replaceChildren(...focus.map(r => {
+    const item = document.createElement("span"), key = document.createElement("kbd");
+    key.textContent = character(r.key); item.append(key, ` ${(r.errors / r.attempts * 100).toFixed(1)}% · ${number(r.errors)} / ${number(r.attempts)}`); return item;
+  }));
   $("rows").replaceChildren();
   for (const row of sorted) {
     const tr = document.createElement("tr");
@@ -44,7 +52,8 @@ function render() {
     const rate = cell(), wrapper = document.createElement("span"), bar = document.createElement("span"), fill = document.createElement("i");
     wrapper.className = "rate"; bar.className = "bar"; fill.style.width = (row.errors / row.attempts * 100) + "%";
     bar.append(fill); wrapper.append(bar, (row.errors / row.attempts * 100).toFixed(1) + "%"); rate.append(wrapper);
-    cell().textContent = [...row.substitutions].sort((a,b) => b[1] - a[1]).slice(0, 3).map(([k,c]) => `${character(k)} × ${number(c)}`).join(" · ") || "—";
+    const substitutions = cell(); substitutions.textContent = [...row.substitutions].sort((a,b) => b[1] - a[1]).slice(0, 3).map(([k,c]) => `${character(k)} × ${number(c)}`).join(" · ") || "—";
+    substitutions.title = [...row.substitutions].map(([k,c]) => `${character(k)} × ${number(c)}`).join(" · ");
     $("rows").append(tr);
   }
   $("empty").hidden = attempts > 0; $("table-wrap").hidden = sorted.length === 0;
@@ -53,16 +62,17 @@ function render() {
 async function refresh() {
   try {
     const result = await request("get");
-    state = result.analytics || core.blank();
+    state = core.validateBackup(result.analytics || core.blank());
     options("language", [...new Set(Object.values(state.groups).map(g => g.language))], "All languages");
     options("layout", [...new Set(Object.values(state.groups).map(g => g.layout))], "All layouts");
     $("undo").hidden = !result.undo;
-    if (result.collectorStatus) $("status").textContent = result.collectorStatus.message + (Date.now() - result.collectorStatus.at > 600000 ? " (Last page status; open Monkeytype to reconnect.)" : "");
+    const statuses = Object.values(result.collectorTabs || {}).filter(s => Date.now() - s.at < 45000);
+    $("status").textContent = statuses.length ? statuses.map((s, i) => `${statuses.length > 1 ? `Tab ${i + 1}: ` : ""}${s.message}`).join(" · ") : "No recent connection. Open Monkeytype, or reload its tab after an extension update.";
     render();
   } catch (error) {notice(error.message);}
 }
 for (const id of ["language", "layout", "sort", "minimum"]) $(id).addEventListener("input", render);
-$("expand").addEventListener("click", () => chrome.tabs.create({url: chrome.runtime.getURL("dashboard.html")}));
+$("expand").addEventListener("click", () => chrome.runtime.openOptionsPage());
 $("export").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(state, null, 2)], {type: "application/json"});
   const url = URL.createObjectURL(blob), a = document.createElement("a");
@@ -70,6 +80,7 @@ $("export").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   notice("Backup exported. Keep it somewhere safe.");
 });
+$("restore").addEventListener("click", () => $("import").click());
 $("import").addEventListener("change", async event => {
   try {
     const file = event.target.files[0]; if (!file) return;
@@ -88,3 +99,5 @@ $("undo").addEventListener("click", async () => {
 });
 chrome.storage.onChanged.addListener((changes, area) => {if (area === "local" || area === "session") void refresh();});
 void refresh();
+
+setInterval(() => {if (!document.hidden) void refresh();}, 15000);

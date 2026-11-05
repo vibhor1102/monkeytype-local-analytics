@@ -1,12 +1,14 @@
 {
   "name": "monkeytype-local-analytics",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.cjs",
     "check": "node scripts/check.cjs",
     "build": "node scripts/build.cjs",
-    "install:local": "node scripts/install-local.cjs"
+    "install:local": "node scripts/install-local.cjs",
+    "package": "npm run build && python3 scripts/package.py",
+    "verify": "npm test && npm run check && npm run package"
   },
   "engines": {
     "node": ">=24"
