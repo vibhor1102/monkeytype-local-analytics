@@ -1,0 +1,11 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const source = path.join(root, 'extension');
+const destination = path.join(root, 'dist', 'extension');
+const manifest = JSON.parse(fs.readFileSync(path.join(source, 'manifest.json'), 'utf8'));
+if (manifest.manifest_version !== 3) throw new Error('Expected Manifest V3.');
+fs.mkdirSync(path.dirname(destination), {recursive: true});
+fs.rmSync(destination, {recursive: true, force: true});
+fs.cpSync(source, destination, {recursive: true});
+console.log(`Built ${manifest.name} ${manifest.version}: ${destination}`);

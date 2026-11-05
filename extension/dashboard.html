@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Monkeytype Local Analytics</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="core.js" defer></script><script src="dashboard.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><div><p class="eyebrow">MONKEYTYPE / LOCAL ANALYTICS</p><h1>Find your trouble keys<span>.</span></h1></div><button id="expand" class="quiet" title="Open dashboard in a tab">↗ <span>Open in tab</span></button></header>
+    <p class="intro">A clearer picture of your typing, one test at a time.</p>
+    <div class="status"><span class="dot"></span><span id="status" role="status">Open Monkeytype and finish a test to start collecting.</span></div>
+    <section class="stats" aria-label="Typing totals">
+      <article><span>Tests</span><strong id="tests">0</strong></article>
+      <article><span>Character attempts</span><strong id="attempts">0</strong></article>
+      <article><span>Mistakes</span><strong id="errors">0</strong></article>
+      <article><span>Error rate</span><strong id="rate">—</strong></article>
+    </section>
+    <section aria-labelledby="keys-title">
+      <div class="section-head"><h2 id="keys-title">Your most mistyped characters</h2><span id="updated" class="muted"></span></div>
+      <div class="filters">
+        <label>Language<select id="language"><option value="">All languages</option></select></label>
+        <label>Layout setting<select id="layout"><option value="">All layouts</option></select></label>
+        <label>Rank by<select id="sort"><option value="errors">Mistake count</option><option value="rate">Error rate</option><option value="attempts">Attempts</option></select></label>
+        <label>Min. attempts<input id="minimum" type="number" min="1" max="1000000" value="1"></label>
+      </div>
+      <div id="empty" class="empty"><div class="key-symbol">a<span>?</span></div><h3>Your next test starts the picture.</h3><p>Visit <a href="https://monkeytype.com/" target="_blank" rel="noreferrer">monkeytype.com</a> and finish a test. Corrected mistakes count too.</p><p>After installing or updating this extension, reload any open Monkeytype tabs.</p></div>
+      <div class="table-wrap" id="table-wrap" hidden><table><thead><tr><th scope="col">Expected</th><th scope="col">Mistakes</th><th scope="col">Attempts</th><th scope="col">Error rate</th><th scope="col">Typed instead</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <p id="additional" class="muted"></p>
+    </section>
+    <details><summary>How to read your statistics</summary><p>Each character insertion is an attempt at the character Monkeytype expected at that position. A correction keeps the original mistake; typing the replacement adds another attempt. Spaces and punctuation count. Early word endings count at the current position; untyped remaining letters are not counted as attempts.</p><p>Extra keystrokes beyond the target word are listed separately. Error rates here describe character attempts and can differ from Monkeytype’s overall accuracy. For a useful rate comparison, raise “Min. attempts” to 20 or more.</p><p>Finished standard tests are supported. Zen, bailed-out tests, Funbox, opposite-shift and composition input are excluded. This tracks characters, not inferred physical finger movements. “Layout setting” is Monkeytype’s configured layout; “default” does not identify your operating system’s actual layout.</p><p>Data belongs to this browser profile, across Monkeytype sign-ins. Raw test text, passwords and account identifiers are not stored. No analytics are uploaded or synced. Browser data clearing or uninstalling can erase them; export a backup to keep them.</p></details>
+    <footer><div class="tools"><button id="export">Export backup</button><label class="file-button">Restore backup<input id="import" type="file" accept="application/json,.json" hidden></label><button id="reset" class="quiet">Reset</button><button id="undo" class="quiet" hidden>Undo last reset / restore</button></div><p class="privacy">Only on this browser. No account access. No uploads.</p><p id="notice" role="status"></p></footer>
+  </main>
+</body>
+</html>

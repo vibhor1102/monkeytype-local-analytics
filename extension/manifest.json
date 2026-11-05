@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Monkeytype Local Analytics",
+  "version": "1.1.0",
+  "description": "Your most mistyped characters on Monkeytype, stored only in this browser.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage"],
+  "background": {"service_worker": "background.js"},
+  "action": {"default_title": "Monkeytype Local Analytics", "default_popup": "dashboard.html"},
+  "options_page": "dashboard.html",
+  "content_scripts": [
+    {"matches": ["https://monkeytype.com/*"], "js": ["core.js", "collector.js"], "world": "MAIN", "run_at": "document_idle"},
+    {"matches": ["https://monkeytype.com/*"], "js": ["relay.js", "menu.js"], "run_at": "document_idle"}
+  ]
+}
