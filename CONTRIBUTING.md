@@ -1,25 +1,31 @@
 # Contributing
 
-Bug reports, useful ideas, and focused pull requests are welcome.
+For bugs or ideas, [open an issue](https://github.com/vibhor1102/monkeytype-local-analytics/issues/new/choose). Include browser/extension versions and steps to repeat a problem. Don’t attach private backups or account details.
 
-## Report a bug or suggest a change
+## Build and check
 
-Check [common fixes](docs/TROUBLESHOOTING.md) first, then [open an issue](https://github.com/vibhor1102/monkeytype-local-analytics/issues/new/choose). Include clear steps and browser/extension versions. For an idea, explain the problem it would solve.
+Use **Node.js 24+** and **Python 3**. There are no runtime npm dependencies.
 
-Keep private backups, browser profiles, and account details out of issues and screenshots. Report security problems through [the private reporting route](SECURITY.md).
+```sh
+npm run verify
+```
 
-## Change the code
+This runs tests, source/manifest checks, and packaging. The ready-to-load folder is `dist/extension`; the ZIP and checksum are also in `dist/`. `npm run build` builds without testing or packaging. Normal builds don’t install into an existing user folder.
 
-1. Read [the development guide](docs/DEVELOPMENT.md) and the repository’s [working instructions](AGENTS.md).
-2. Keep the change focused. Explain what users will notice and why it helps.
-3. Run `npm run verify` and any browser checks relevant to the change.
-4. In your pull request, describe the change and how you checked it. Say plainly what you couldn’t test.
+Optional browser checks need installed Google Chrome and Playwright:
 
-Please preserve these product choices:
+```sh
+npm install --prefix .local/browser playwright
+npm run test:view
+npm run test:browser
+```
 
-- Correcting a mistake must keep the original mistake; the replacement is another attempt.
-- Stats stay local, with narrow permissions and no runtime dependencies.
-- Existing saved data and install identities must survive updates. Plan and test migrations before changing storage.
-- Monkeytype’s typing, authentication, and result submission keep working normally.
+These use temporary profiles. Automated typing must stay signed out of real accounts. To test an extracted release, set `MLA_EXTENSION_DIR=/path/to/extracted/extension` for either command. Existing-profile UI checks must type no tests, preserve storage, attach with `noDefaults:true`, and clear tab-only theme overrides in `finally`.
 
-For automated typing and destructive recovery tests, use a temporary signed-out browser profile. Never submit automated results to someone’s account. More detail is in [browser testing](docs/DEVELOPMENT.md#browser-checks).
+## Submit a change
+
+Keep changes focused and explain how you checked them. Preserve existing data, local-only storage, and corrected-mistake accounting: a correction keeps the error and adds another attempt. Don’t change Monkeytype’s typing, authentication, or result submission.
+
+Keep browser profiles, private backups, credentials, and generated `dist/` out of commits. Public screenshots must use example data.
+
+Before publishing a release, check the extracted ZIP in Chrome, verify the downloaded checksum, and confirm an existing installation keeps its identity and saved data after updating in the same folder.

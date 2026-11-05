@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Installation and common fixes
-    url: https://github.com/vibhor1102/monkeytype-local-analytics/blob/main/docs/TROUBLESHOOTING.md
+    url: https://github.com/vibhor1102/monkeytype-local-analytics/blob/main/docs/SETUP.md#common-problems
     about: Try these steps before opening a bug report.
   - name: Report a security problem privately
     url: https://github.com/vibhor1102/monkeytype-local-analytics/security/advisories/new

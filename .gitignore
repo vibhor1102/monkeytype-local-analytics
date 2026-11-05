@@ -3,3 +3,7 @@
 /node_modules/
 *.log
 .DS_Store
+
+# Local agent and thread notes
+/AGENTS.md
+/HANDOFF.md

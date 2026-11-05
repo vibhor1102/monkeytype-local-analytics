@@ -4,7 +4,7 @@ labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: "Check [common fixes](https://github.com/vibhor1102/monkeytype-local-analytics/blob/main/docs/TROUBLESHOOTING.md) first. Don't attach private backups, browser profiles, or account details."
+      value: "Check [common fixes](https://github.com/vibhor1102/monkeytype-local-analytics/blob/main/docs/SETUP.md#common-problems) first. Don't attach private backups, browser profiles, or account details."
   - type: input
     id: versions
     attributes:

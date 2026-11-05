@@ -1,41 +1,9 @@
 # Privacy
 
-**Your typing stats stay in your Chrome profile. The extension doesn’t upload them, track you, or sync them to an account.**
+The extension saves stats in your **Chrome profile**. It makes no network requests, uploads, or account/Chrome Sync connections of its own. People sharing a Chrome profile share the same stats, across Monkeytype sign-ins.
 
-## What it reads
+It reads Monkeytype tests and relevant settings to count character attempts, mistakes, substitutions, and deletions. It saves those counts, test totals, setting labels, the latest test’s timestamp, and hashes used to avoid duplicate counting. **Raw test text, account identifiers, passwords, and individual keystroke timings aren’t saved.** It runs only on `monkeytype.com` and asks for the `storage` permission.
 
-While you use Monkeytype, the extension reads the current or completed test and the settings needed to interpret it, such as language, layout, and test mode. It processes test text in the tab to count attempts and mistakes.
+The dashboard appears inside Monkeytype, so scripts on that page can read the **displayed stats**. Storage and backup/reset operations run in the extension’s separate script context. This is a practice tool, not a tamper-proof record.
 
-It doesn’t collect passwords, account identifiers, or data from other websites.
-
-## What it saves
-
-- Character attempts, mistakes, and what you typed instead.
-- Extra insertions and manual deletion counts.
-- Test totals, language/layout/mode labels, and the latest saved test’s timestamp.
-- Up to 10,000 test fingerprints to avoid counting the same test twice. These are hashes, not copies of the test text.
-- One previous snapshot after a reset or restore, plus small bookkeeping values used to keep changes consistent between tabs.
-
-It **doesn’t save raw test text or a history of individual keystroke timings**. Recent collection messages are temporary. Filters, scroll position, and the focused control are remembered for the tab.
-
-## Who can see the stats?
-
-People using the same Chrome profile share the same stats, even across different Monkeytype sign-ins.
-
-The dashboard appears inside Monkeytype. As with other content displayed on a website, **scripts on that page can read the displayed stats**. Direct storage, backup, and reset operations run in the extension’s separate script context.
-
-There is no account/cloud/Chrome syncing. The extension makes no network requests of its own; Monkeytype continues using its own services normally.
-
-## Permissions
-
-The extension asks for **storage** and runs only on `https://monkeytype.com/*`. It needs that access to read tests and show the Typing mistakes page.
-
-## Backups and removal
-
-Exported backups contain your personal typing stats. Keep them somewhere safe and don’t attach them to public issues.
-
-Restore replaces current data rather than merging it. Reset keeps a previous snapshot and test fingerprints; it isn’t a secure erase. Removing the extension or clearing its browser data can erase saved stats. [Back up before you move or remove it →](docs/SETUP.md#back-up-and-restore)
-
-## A limit to keep in mind
-
-This is a personal practice tool, not a tamper-proof record. A script on Monkeytype can imitate the messages used to report tests. Counts are checked before saving, but the extension can’t prove that a recorded test was genuine.
+Exported backups contain personal typing stats; keep them private. Restore replaces current data. Reset keeps a previous snapshot, so it isn’t a secure erase. Removing the extension or clearing its browser data can erase saved stats.

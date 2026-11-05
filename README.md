@@ -1,50 +1,25 @@
 # Monkeytype Typing Mistakes
 
-See which characters you mistype on [Monkeytype](https://monkeytype.com), including the mistakes you correct.
+A free Chrome extension that shows which characters you mistype on Monkeytype and what to practise. Mistakes still count when you correct them with Backspace.
 
-**[Download](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest)** · [Setup guide](docs/SETUP.md) · [Help](docs/TROUBLESHOOTING.md)
+It adds a **Typing mistakes** page inside Monkeytype, using your theme and font. Your stats stay in your browser; no extra account or sync.
 
-A free Chrome extension. Your stats stay in this browser, with no extra account, uploads, or sync. Tested on **Linux Chrome**; other platforms and browsers haven’t been tested.
+**[Download the latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest)**
 
-![Typing mistakes inside Monkeytype, showing example character stats and practice suggestions](docs/dashboard.png)
+![Character mistakes and practice suggestions inside Monkeytype](docs/dashboard.png)
 
-*Example data, not a real person’s typing history.* [Light theme](docs/dashboard-light.png) · [Narrow window](docs/dashboard-mobile.png)
-
-## What you get
-
-- **Your common mistakes:** character counts, error rates, and what you typed instead.
-- **Practice focus:** suggestions once a character has at least 20 attempts.
-- **Corrected mistakes included:** Backspace doesn’t erase the original mistake; the replacement is another attempt.
-- **A page inside Monkeytype:** the same tab, theme, and font you already use.
-- **Backups:** export your stats and restore them later.
+*Shown with example data.*
 
 <a id="install-from-github-releases"></a>
 
 ## Install
 
-1. [Open the latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest) and download **monkeytype-local-analytics-1.4.0.zip**, not “Source code”.
-2. Extract it to a **permanent folder**. Keep that folder: Chrome loads the extension from it.
-3. Open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked**, and select the folder containing `manifest.json`.
-4. Reload Monkeytype and finish a new standard test.
-5. Open **Typing mistakes** below **User stats** in the account menu, or use the extension’s toolbar button. You can use the toolbar without signing in.
+1. Download **monkeytype-local-analytics-1.4.0.zip** and extract it to a permanent folder.
+2. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the folder containing `manifest.json`.
+3. Reload Monkeytype and finish a new standard test. Open **Typing mistakes** below **User stats**, or use the extension’s toolbar button without signing in.
 
-No Node.js, terminal commands, or payment needed. [Detailed setup and update instructions →](docs/SETUP.md)
+Records new tests, not past account results. Tested on desktop Linux Chrome; other platforms haven’t been tested.
 
-## Before you start
+[Setup, updates and help](docs/SETUP.md) · [Privacy](PRIVACY.md)
 
-- Recording starts with **new tests after installation**. Past account results can’t be imported.
-- Standard completed tests are supported. Zen, Funbox, abandoned tests, and some input methods are excluded. [What gets recorded →](docs/USAGE.md#what-gets-recorded)
-- Stats belong to this **browser profile**, across Monkeytype sign-ins. They don’t follow your account or sync to another device.
-- Updates are manual. **Export a backup before updating, moving, or removing the extension.** [Update safely →](docs/SETUP.md#update-without-losing-your-stats)
-
-## Learn more or get help
-
-[Read your stats](docs/USAGE.md) · [Back up your data](docs/SETUP.md#back-up-and-restore) · [Fix a problem](docs/TROUBLESHOOTING.md) · [Privacy](PRIVACY.md)
-
-Found a bug or have an idea? [Open an issue](https://github.com/vibhor1102/monkeytype-local-analytics/issues/new/choose). Don’t attach private backups or account details.
-
-## For contributors
-
-See [contributing](CONTRIBUTING.md), [development](docs/DEVELOPMENT.md), and [release checks](docs/VERIFICATION.md).
-
-Independent project; not affiliated with or endorsed by Monkeytype. Extension code and chart icon are [MIT licensed](LICENSE). Monkeytype is a separate GPL-3.0 project; its name identifies compatibility. No Monkeytype logo, fonts, or implementation code is bundled.
+MIT licensed. Independent project, not affiliated with Monkeytype.
