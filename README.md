@@ -10,7 +10,7 @@ A same-tab **Typing mistakes** page inside Monkeytype, using its active theme an
 
 ## Install from GitHub Releases
 
-1. Download **monkeytype-local-analytics-1.3.0.zip** from the [latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest). Download the named asset, not GitHub's “Source code” archive.
+1. Download **monkeytype-local-analytics-1.3.1.zip** from the [latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest). Download the named asset, not GitHub's “Source code” archive.
 2. Extract it into a permanent folder. The folder should contain `manifest.json` directly. Keep this folder: Chrome loads the extension from it.
 3. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and select that folder.
 4. Reload open Monkeytype tabs. Finish a new standard test. Open **Typing mistakes** immediately below **User stats** in the signed-in account menu, or use the extension's toolbar button when signed out. It opens [monkeytype.com/#typing-mistakes](https://monkeytype.com/#typing-mistakes) in your Monkeytype tab. Pinning is optional.

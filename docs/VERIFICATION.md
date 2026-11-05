@@ -1,4 +1,4 @@
-# Release verification — 1.3.0
+# Release verification — 1.3.1
 
 2026-11-05, Fedora Linux, Google Chrome 157.0.8103.38. The main experience is now **Typing mistakes** inside Monkeytype. These checks do not imply universal browser/platform support.
 
@@ -24,4 +24,4 @@ Windows/macOS and alternative browsers are untested. Only standard non-compositi
 
 ## Previous acceptance retained
 
-Version 1.2.0 established export/restore, reset/Undo, malformed import handling, and v1 backup compatibility. Its same-path personal update preserved the extension ID and complete local storage. Version 1.3.0 keeps schema 1 and the same installation identity; the installer explicitly accepts the renamed display name. The old menu label and hash are retired in favor of Typing mistakes, with old bookmarks migrated.
+Version 1.2.0 established export/restore, reset/Undo, malformed import handling, and v1 backup compatibility. Its same-path personal update preserved the extension ID and complete local storage. Version 1.3.1 keeps schema 1 and the same installation identity; the installer explicitly accepts the renamed display name. The old menu label and hash are retired in favor of Typing mistakes, with old bookmarks migrated.

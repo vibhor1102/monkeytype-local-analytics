@@ -50,9 +50,11 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     await page.evaluate(() => document.documentElement.style.removeProperty('--main-color'));
     await view.locator('#minimum').fill('2'); await page.keyboard.type('0'); await page.keyboard.press('Tab'); await page.keyboard.press('Space');
     assert.equal(await page.evaluate(() => window.currentEventLog?.()?.events?.some(e => e.type === 'timer' && e.data.event === 'start') || false), false);
-    await view.locator('#minimum').focus(); await page.keyboard.press('Escape');
-    await page.locator('#Commandline input').waitFor({state:'visible'}); await page.keyboard.press('Escape');
-    await page.locator('#Commandline input').waitFor({state:'hidden'});
+    for (const shortcut of ['Escape', 'Escape', 'Control+Shift+P']) {
+      await view.locator('#minimum').focus(); await page.keyboard.press(shortcut);
+      await page.locator('#CommandlineModal input').waitFor({state:'visible'}); await page.keyboard.press('Escape');
+      await page.locator('#CommandlineModal input').waitFor({state:'hidden'});
+    }
     await view.locator('#reset').evaluate(button => button.click());
     await page.evaluate(() => window.postMessage({channel:'monkeytype-local-analytics-v1',type:'view',operation:'reset'},location.origin));
     assert.equal((await recovery.evaluate(() => chrome.storage.local.get('analytics'))).analytics.tests, 1);

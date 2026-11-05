@@ -64,7 +64,9 @@
       // Keep filter typing and keyboard controls out of Monkeytype's global shortcuts.
       for (const type of ["keydown", "keyup", "keypress", "beforeinput", "input"]) root.addEventListener(type, event => {
         // Preserve Monkeytype's command palette while isolating test shortcuts.
-        if (type === "keydown" && (event.key === "Escape" || ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === "KeyP"))) return;
+        if ((type === "keydown" || type === "keyup") &&
+            (["Escape", "Control", "Meta", "Shift", "Alt"].includes(event.key) ||
+             ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === "KeyP"))) return;
         event.stopPropagation();
       });
       main.append(host);

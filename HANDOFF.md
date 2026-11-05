@@ -2,7 +2,7 @@
 
 This root checkout is authoritative. Read AGENTS.md and (when present) ignored `.local/HANDOFF.local.md` before implementation. Retired copies must not receive source edits.
 
-Version 1.2.0 was the first public distribution. Version 1.3.0 integrates the primary UI into Monkeytype and renames it Typing mistakes. The public repository slug stays stable. See README for installation/update, PRIVACY.md for data flow, and docs/VERIFICATION.md for acceptance evidence and limits. The public repository is https://github.com/vibhor1102/monkeytype-local-analytics.
+Version 1.2.0 was the first public distribution. Version 1.3.1 integrates the primary UI into Monkeytype and renames it Typing mistakes. The public repository slug stays stable. See README for installation/update, PRIVACY.md for data flow, and docs/VERIFICATION.md for acceptance evidence and limits. The public repository is https://github.com/vibhor1102/monkeytype-local-analytics.
 
 ## Product decisions
 
