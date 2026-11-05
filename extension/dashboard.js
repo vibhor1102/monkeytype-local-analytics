@@ -1,11 +1,20 @@
+/* Shared UI controller. The build prepends trusted HTML/CSS assets for the site view. */
+(() => {
 "use strict";
+globalThis.MLAView = {mount(root, embedded = false) {
 const core = globalThis.MonkeytypeLocalAnalyticsCore;
-const $ = id => document.getElementById(id);
+const $ = id => root.getElementById(id);
 let state = core.blank();
+const mountedAt = Date.now();
 const number = value => value.toLocaleString();
 const character = c => ({" ": "Space", "\n": "Enter", "\t": "Tab"}[c] || c);
 async function request(type, value) {
-  const result = await chrome.runtime.sendMessage({type, value});
+  let result;
+  try {result = await chrome.runtime.sendMessage(embedded ? {type: "view", operation: type, value} : {type, value});}
+  catch (error) {
+    if (embedded && /context invalidated|receiving end|connection/i.test(error.message)) throw Error("Extension updated or disconnected. Reload Monkeytype to reconnect Typing mistakes.");
+    throw error;
+  }
   if (!result?.ok) throw new Error(result?.error || "The extension did not respond.");
   return result;
 }
@@ -67,21 +76,23 @@ async function refresh() {
     options("layout", [...new Set(Object.values(state.groups).map(g => g.layout))], "All layouts");
     $("undo").hidden = !result.undo;
     const statuses = Object.values(result.collectorTabs || {}).filter(s => Date.now() - s.at < 45000);
-    $("status").textContent = statuses.length ? statuses.map((s, i) => `${statuses.length > 1 ? `Tab ${i + 1}: ` : ""}${s.message}`).join(" · ") : "No recent connection. Open Monkeytype, or reload its tab after an extension update.";
+    $("status").textContent = statuses.length ? statuses.map((s, i) => `${statuses.length > 1 ? `Tab ${i + 1}: ` : ""}${s.message}`).join(" · ") : (embedded && Date.now() - mountedAt < 30000 ? "Connecting to Monkeytype. Finish a standard test to add mistakes here." : "No recent collection status. Reload Monkeytype to reconnect.");
     render();
   } catch (error) {notice(error.message);}
 }
 for (const id of ["language", "layout", "sort", "minimum"]) $(id).addEventListener("input", render);
-$("expand").addEventListener("click", () => chrome.runtime.openOptionsPage());
-$("export").addEventListener("click", () => {
+$("expand")?.addEventListener("click", () => chrome.runtime.openOptionsPage());
+$("export").addEventListener("click", event => {
+  if (embedded && !event.isTrusted) return;
   const blob = new Blob([JSON.stringify(state, null, 2)], {type: "application/json"});
   const url = URL.createObjectURL(blob), a = document.createElement("a");
-  a.href = url; a.download = `monkeytype-analytics-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  a.href = url; a.download = `monkeytype-typing-mistakes-${new Date().toISOString().slice(0,10)}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   notice("Backup exported. Keep it somewhere safe.");
 });
-$("restore").addEventListener("click", () => $("import").click());
+$("restore").addEventListener("click", event => {if (!embedded || event.isTrusted) $("import").click();});
 $("import").addEventListener("change", async event => {
+  if (embedded && !event.isTrusted) return;
   try {
     const file = event.target.files[0]; if (!file) return;
     if (file.size > 8000000) throw new Error("Backup is too large (maximum 8 MB).");
@@ -90,14 +101,22 @@ $("import").addEventListener("change", async event => {
     await request("restore", backup); await refresh(); notice("Backup restored. The previous data can be restored with Undo.");
   } catch (error) {notice(error.message);} finally {event.target.value = "";}
 });
-$("reset").addEventListener("click", async () => {
-  if (!confirm("Reset local analytics? Your current data will remain available through Undo.")) return;
-  try {await request("reset"); await refresh(); notice("Analytics reset. Undo is available.");} catch (error) {notice(error.message);}
+$("reset").addEventListener("click", async event => {
+  if (embedded && !event.isTrusted) return;
+  if (!confirm("Reset saved mistake data? Your current data will remain available through Undo.")) return;
+  try {await request("reset"); await refresh(); notice("Mistake data reset. Undo is available.");} catch (error) {notice(error.message);}
 });
-$("undo").addEventListener("click", async () => {
-  try {await request("undo"); await refresh(); notice("Previous analytics restored.");} catch (error) {notice(error.message);}
+$("undo").addEventListener("click", async event => {
+  if (embedded && !event.isTrusted) return;
+  try {await request("undo"); await refresh(); notice("Previous mistake data restored.");} catch (error) {notice(error.message);}
 });
-chrome.storage.onChanged.addListener((changes, area) => {if (area === "local" || area === "session") void refresh();});
+const changed = (changes, area) => {if (area === "local" || area === "session") void refresh();};
+chrome.storage.onChanged.addListener(changed);
 void refresh();
 
-setInterval(() => {if (!document.hidden) void refresh();}, 15000);
+const timer = setInterval(() => {if (!document.hidden) void refresh();}, embedded ? 5000 : 15000);
+return () => {clearInterval(timer); try {chrome.storage.onChanged.removeListener(changed);} catch { /* Updated extension context. DOM cleanup must still run. */ }};
+
+}};
+if (location.protocol === "chrome-extension:") globalThis.MLAView.mount(document);
+})();

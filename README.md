@@ -1,8 +1,8 @@
-# Monkeytype Local Analytics
+# Monkeytype Typing Mistakes
 
 Know what to practise on [Monkeytype](https://monkeytype.com). See character mistakes, common substitutions, and a practice focus based on characters with at least 20 attempts. Correcting a mistake keeps the original mistake and adds a new attempt.
 
-Independent, free, local-only Chrome extension. No registration, Node.js, Web Store, account access, or sync required. MIT licensed. Not affiliated with or endorsed by Monkeytype.
+A same-tab **Typing mistakes** page inside Monkeytype, using its active theme and font. Independent, free, local-only Chrome extension. No registration, Node.js, Web Store, account access, or sync required. MIT licensed. Not affiliated with or endorsed by Monkeytype.
 
 ![Dashboard showing synthetic practice data](docs/dashboard.png)
 
@@ -10,10 +10,10 @@ Independent, free, local-only Chrome extension. No registration, Node.js, Web St
 
 ## Install from GitHub Releases
 
-1. Download **monkeytype-local-analytics-1.2.0.zip** from the [latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest). Download the named asset, not GitHub's “Source code” archive.
+1. Download **monkeytype-local-analytics-1.3.0.zip** from the [latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest). Download the named asset, not GitHub's “Source code” archive.
 2. Extract it into a permanent folder. The folder should contain `manifest.json` directly. Keep this folder: Chrome loads the extension from it.
 3. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and select that folder.
-4. Reload open Monkeytype tabs. Finish a new standard test. Open **Local analytics** immediately below **User stats** in the signed-in account menu, or use the extension's toolbar button when signed out. Pinning is optional.
+4. Reload open Monkeytype tabs. Finish a new standard test. Open **Typing mistakes** immediately below **User stats** in the signed-in account menu, or use the extension's toolbar button when signed out. It opens [monkeytype.com/#typing-mistakes](https://monkeytype.com/#typing-mistakes) in your Monkeytype tab. Pinning is optional.
 
 Chrome may show a developer-extension warning. This is an unpacked extension, with manual updates. Never install an unexpected archive or disable browser security to install it.
 
@@ -40,11 +40,15 @@ Practice focus ranks error rates with at least 20 attempts; it is a hint, not a 
 - Storage full? Export a backup, free browser space, and keep the Monkeytype tab open for retries. Malformed backups are rejected. Data plus the undo snapshot share Chrome's local storage quota (normally 10 MB); imports are limited to 8 MB and may still exceed available storage. Failed writes leave the previous data intact.
 - The account menu depends on Monkeytype's markup. Use toolbar access if upstream changes break the entry. Never post private backups in a public issue.
 
+The page keeps Monkeytype’s header, footer, font and theme, including custom theme colors. Filters and backup controls stay inside that page. A short note says the data is saved on this browser and is not synced with your Monkeytype account. The extension’s separate options page remains a recovery fallback.
+
+The `#typing-mistakes` URL works with reloads and bookmarks. Older `#local-analytics` bookmarks redirect to it. Without the extension, the hash opens Monkeytype’s regular typing page; it is not a server-provided Monkeytype route. Opening from the menu performs a normal document navigation to stop any active test and first asks the collector to finish saving a completed test. If saving stays pending, the menu asks you to keep the tab open and retry. Back/Forward and the native navigation remain available.
+
 See [privacy](PRIVACY.md), [verification](docs/VERIFICATION.md), and [contributing](CONTRIBUTING.md). Report reproducible problems through [GitHub Issues](https://github.com/vibhor1102/monkeytype-local-analytics/issues), with browser/extension versions and collection status.
 
 ## Develop
 
-Node.js 24+ and Python 3 (packaging only). No npm dependencies.
+Node.js 24+ and Python 3 (packaging only). No runtime npm dependencies.
 
 ```sh
 npm test
@@ -55,7 +59,16 @@ npm run package   # ready-to-load ZIP and SHA256SUMS
 
 Load `dist/extension` in a disposable Chrome profile. `npm run install:local -- --target /absolute/existing/install/path [--dry-run]` explicitly copies runtime files into a separate install folder; it does not reload Chrome. Normal builds never install into your home directory.
 
-The ZIP is deterministic for the same source and Python/zlib toolchain; compression versions can change archive bytes without changing runtime files. Always verify downloads against the release’s own SHA256SUMS. Verify with `sha256sum -c SHA256SUMS` from the directory containing both downloaded assets (or `Get-FileHash` on Windows). CI runs accounting, background/recovery tests, syntax checks, and packaging; live Monkeytype/browser acceptance is a separate release check.
+The ZIP is deterministic for the same source and Python/zlib toolchain; compression versions can change archive bytes without changing runtime files. Always verify downloads against the release’s own SHA256SUMS. Verify with `sha256sum -c SHA256SUMS` from the directory containing both downloaded assets (or `Get-FileHash` on Windows). Optional browser acceptance (uses temporary signed-out Chrome profiles, never your regular profile):
+
+```sh
+npm install --prefix .local/browser playwright
+npm run test:browser
+# To test an extracted ZIP instead:
+MLA_EXTENSION_DIR=/path/to/extracted/extension npm run test:browser
+```
+
+CI runs accounting, background/recovery tests, syntax checks, and packaging; live Monkeytype/browser acceptance is a separate release check.
 
 ## Attribution
 

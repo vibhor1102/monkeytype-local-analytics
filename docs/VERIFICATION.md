@@ -1,27 +1,27 @@
-# Release verification — 1.2.0
+# Release verification — 1.3.0
 
-2026-11-05, Fedora Linux, Google Chrome 157.0.8103.38 (headless isolated profile and the existing desktop profile). These are bounded acceptance checks, not a claim of universal compatibility.
+2026-11-05, Fedora Linux, Google Chrome 157.0.8103.38. The main experience is now **Typing mistakes** inside Monkeytype. These checks do not imply universal browser/platform support.
 
 ## Completed
 
-- 22 Node tests: accounting, corrected mistakes, automatic input, boundaries, exclusions, duplicate handling, malformed data, backup canonicalization, safe-integer overflow without mutation, concurrent retries, quota/write failure recovery, atomic restore, reset/undo, sender restrictions, per-tab status, collector queueing, settings snapshots, and thrown hooks.
-- Syntax, manifest references/icons/HTML dependencies, version consistency, portable build, deterministic ZIP and checksums. ZIP root contains only extension runtime files; no source tests, private data, or development dependencies.
-- Extracted ZIP loaded through Chrome's extension installation mechanism into a disposable profile. Empty dashboard, popup, live production hook and finished signed-out standard test worked. A deliberately corrected mistake produced 264 attempts, one mistake, and one manual deletion. The site displayed “Sign in to save your result”; no personal account was used.
-- Reloaded dashboard/site retained counts without duplication. Real worker v1 restore, reset, Undo, JSON export round trip, invalid backup rejection, and menu opening/reuse were exercised. A representative menu fixture was used in the disposable signed-out profile.
-- Desktop, 390px viewport (no document overflow), light/dark color schemes inspected. Restore is a keyboard-accessible button, native controls retain labels, tables have column headers, status text is live, and focus styles are explicit. No formal screen-reader audit is claimed.
-- Existing desktop install was privately backed up, updated at the same path without adding a manifest key, and reloaded. Its extension ID and complete local storage remained identical. No automated typing was performed in that profile. Real signed-in menu placement and keyboard dashboard access were checked separately.
-- Public screenshots use deliberately synthetic data in the disposable profile. No private data/profile/archive is published.
+- 25 Node tests cover corrected-mistake accounting, automatic input, boundaries, exclusions, deduplication, malformed data, backup canonicalization, overflow without mutation, retries/write failures, atomic restore, reset/undo, sender restrictions, isolated view access, toolbar routing, settings snapshots, and navigation waiting for a completed save.
+- Syntax, manifest references, portable build, deterministic packaging with a fixed Python/zlib toolchain, and version consistency pass. The archive contains only runtime files with its manifest at the root.
+- `npm run test:browser` ran against the extracted ZIP using a temporary signed-out Chrome profile. It verified old bookmark migration to `/#typing-mistakes`, native header/footer, identical site/view fonts and theme variables, a real light-theme change through Monkeytype's picker, immediate custom-color inheritance, filter keyboard isolation, synthetic-reset/page-message rejection, 390px layout, native Settings navigation, Back, reload, and return to typing.
+- A trusted menu click during an active test navigated in the same tab without leaving a running timer underneath. A subsequent completed standard test with a wrong character/backspace/replacement still collected exactly one mistake and one manual deletion. No real account was used. Recovery-page reload retained the data.
+- Chrome's real extension reload mechanism was exercised while the in-page view was open; leaving through native navigation restored the original page rather than stranding it hidden. The options page remains a separate recovery fallback.
+- The renamed personal install retained its path-derived ID and complete local storage (six tests). The real signed-in menu entry was verified directly below User stats, opening the same-tab themed page by keyboard. No automated typing occurred in that profile.
+- Public screenshots use synthetic data in a disposable profile. No private data/profile/archive is published.
 
-- GitHub CI checks passed. The draft asset was downloaded, its own SHA-256 verified, and all 16 extracted runtime files compared byte-for-byte with source. Python/zlib versions may produce different compressed archive bytes; determinism was checked with a fixed local toolchain.
+The optional browser test is intentionally separate from CI because it depends on a live third-party deployment and installed Chrome. It never attaches to a regular user profile. Contributor setup is in README.
 
-## Limits
+## Limits and design boundaries
 
-Windows/macOS and alternative browsers are untested. Only standard non-composition BMP character input is supported; exclusions are described in README. Internal Monkeytype hooks and menu markup may change. Polling can miss extremely rapid successive tests. Pending retries are tab-memory only and require keeping the tab open until Saved. Storage quota errors are covered with failure injection, not by filling the user's browser disk. Deduplication covers the most recent 10,000 hashes. There is no Web Store or automatic updater, account import, or sync.
+The hash destination is provided by this extension. Without it, `https://monkeytype.com/#typing-mistakes` opens the regular site. Full server paths such as `/typing-mistakes` are not claimed. No Monkeytype router, engine, auth, submission, or configuration methods are replaced.
 
-The full dashboard uses the operating system's light/dark preference. The small site-menu entry inherits Monkeytype's actual classes/theme. A separate extension page keeps account data and storage controls isolated and avoids disrupting typing or navigation; it intentionally does not copy arbitrary Monkeytype custom themes.
+Entering from the menu uses real document navigation after flushing completed-test saves. This ends active tests through normal page lifecycle. If saves remain pending, the menu asks the user to keep the tab open and retry. Other native navigation may still unload pending tab-memory saves. The site header, footer, and active font/color variables remain intact. Scoped Shadow DOM prevents accidental CSS collisions; displayed aggregates can be inspected by page scripts, while storage access remains behind extension-isolated code. Data-changing controls require trusted events.
 
-## Reproduce
+Windows/macOS and alternative browsers are untested. Only standard non-composition BMP input is supported. Internal hooks and markup can change. Polling may miss extremely rapid tests; pending retries require an open tab. Storage quota errors use failure injection rather than filling the user's disk. Deduplication covers the most recent 10,000 hashes. No formal screen-reader audit is claimed. Native custom themes can have low contrast; the extension follows the user's chosen theme. No cloud/account sync or automatic updater is included.
 
-Run `npm run verify`, extract the named ZIP, and load it in a disposable Chrome profile. Reject optional cookies, stay signed out, complete a standard test with a wrong character/backspace/replacement, then inspect saved counts. Reload, export, reset, Undo, and restore. Try malformed JSON; verify data survives. Use the account-menu entry in a signed-in manual session without automated results, or toolbar access signed out. Replace files in the same folder, reload the extension/site, and verify identity and counts. Compare repeat packages with SHA256SUMS.
+## Previous acceptance retained
 
-GitHub Actions builds draft releases on version tags; publishing follows browser acceptance. Verify the published ZIP's checksum and re-extract it before loading. Download and public-release checks are also recorded in the release notes.
+Version 1.2.0 established export/restore, reset/Undo, malformed import handling, and v1 backup compatibility. Its same-path personal update preserved the extension ID and complete local storage. Version 1.3.0 keeps schema 1 and the same installation identity; the installer explicitly accepts the renamed display name. The old menu label and hash are retired in favor of Typing mistakes, with old bookmarks migrated.

@@ -4,6 +4,7 @@
   window.__mlaCollector = true;
   const channel = "monkeytype-local-analytics-v1", core = globalThis.MonkeytypeLocalAnalyticsCore;
   const pending = [], contexts = new Map();
+  let navigation;
   let lastLog, initialized = false, busy = false, stopped = false;
   let lastStatus = "Connected — finish a new standard test to collect.", lastPosted = 0;
   const post = (type, value) => window.postMessage({channel, type, value}, location.origin);
@@ -25,6 +26,11 @@
       } catch {status("Cannot read the active test. Reload Monkeytype; collection is paused.");}
     }, 0);
   }, true);
+  function navigationReady() {
+    if (navigation && !pending.length && !busy) {
+      post("navigation-ready", navigation); navigation = undefined;
+    }
+  }
   async function check() {
     if (busy || stopped) return;
     busy = true;
@@ -46,13 +52,17 @@
       result.id = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("");
       core.validateSummary(result); pending.push(result); post("summary", pending[0]);
     } catch (error) {status(String(error.message).slice(0, 300));}
-    finally {busy = false; if (Date.now() - lastPosted > 15000) status(lastStatus);}
+    finally {busy = false; if (Date.now() - lastPosted > 15000) status(lastStatus); navigationReady();}
   }
   window.addEventListener("message", event => {
     if (event.source !== window || event.origin !== location.origin || event.data?.channel !== channel) return;
     if (event.data.type === "ack" && event.data.value === pending[0]?.id) {
-      pending.shift(); status(pending.length ? "Saving queued tests… Keep this tab open." : "Saved — your latest test is in local analytics.");
+      pending.shift(); status(pending.length ? "Saving queued tests… Keep this tab open." : "Saved — your latest test is in Typing mistakes.");
       if (pending.length) post("summary", pending[0]);
+      navigationReady();
+    }
+    if (event.data.type === "navigate-request" && typeof event.data.value === "string" && event.data.value.length < 100) {
+      navigation = event.data.value; void check();
     }
     if (event.data.type === "relay-ready") {lastPosted = 0; void check();}
     if (event.data.type === "stop") stopped = true;

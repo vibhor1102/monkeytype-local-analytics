@@ -21,7 +21,9 @@ if (fs.existsSync(target)) {
     const oldPath = path.join(target, 'manifest.json');
     if (!fs.existsSync(oldPath)) throw new Error('Nonempty target is not an extension installation.');
     const old = JSON.parse(fs.readFileSync(oldPath, 'utf8'));
-    if (old.name !== manifest.name || (old.key || null) !== (manifest.key || null)) {
+    const compatibleName = old.name === manifest.name ||
+      (old.name === 'Monkeytype Local Analytics' && manifest.name === 'Monkeytype Typing Mistakes');
+    if (!compatibleName || (old.key || null) !== (manifest.key || null)) {
       throw new Error('Extension identity differs. Plan and verify data migration before changing it.');
     }
   }

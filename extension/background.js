@@ -22,10 +22,6 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   const fromDashboard = ["dashboard.html", "popup.html"].some(path => sender.url === chrome.runtime.getURL(path));
   if (!fromSite && !fromDashboard) return;
   serialize(async () => {
-    if (fromSite && message.type === "open-dashboard") {
-      await chrome.runtime.openOptionsPage();
-      return {ok: true};
-    }
     if (fromSite && message.type === "status") {
       if (typeof message.value !== "string" || message.value.length > 300) throw new Error("Invalid status.");
       await saveStatus(sender.tab.id, message.value);
@@ -36,10 +32,25 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       const {analytics = core.blank()} = await chrome.storage.local.get("analytics");
       const added = core.merge(analytics, message.value);
       if (added) await chrome.storage.local.set({analytics});
-      await saveStatus(sender.tab.id, "Saved — your latest test is in local analytics.");
+      await saveStatus(sender.tab.id, "Saved — your latest test is in Typing mistakes.");
       return {ok: true, added};
     }
-    if (!fromDashboard) throw new Error("Unsupported request.");
+    // No view operations are exposed by the page-message relay. Only this extension's
+    // isolated UI can call these; the website cannot access chrome.runtime here.
+    if (fromSite && message.type === "view" && ["get", "restore", "reset", "undo"].includes(message.operation)) {
+      message = {...message, type: message.operation};
+    } else if (!fromDashboard) throw new Error("Unsupported request.");
+    if (fromDashboard && message.type === "open-integrated") {
+      const {collectorTabs = {}} = await chrome.storage.session.get("collectorTabs");
+      for (const [tabId] of Object.entries(collectorTabs).sort((a,b) => b[1].at - a[1].at)) {
+        try {
+          const result = await chrome.tabs.sendMessage(Number(tabId), {type: "open-analytics"}, {frameId: 0});
+          if (result?.ok) {await chrome.tabs.update(Number(tabId), {active: true}); return {ok: true};}
+        } catch { /* Tab closed, navigated away, or needs an extension reload. */ }
+      }
+      await chrome.tabs.create({url: "https://monkeytype.com/#typing-mistakes"});
+      return {ok: true};
+    }
     if (message.type === "get") {
       return {ok: true, ...(await chrome.storage.local.get(["analytics", "undo"])), ...(await chrome.storage.session.get("collectorTabs"))};
     }

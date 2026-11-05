@@ -11,8 +11,8 @@
     const existing = anchor.parentElement.querySelector(`[${marker}]`);
     if (existing) {currentAnchor = anchor; currentButton = existing; return;}
 
-    const button = document.createElement("button");
-    button.type = "button";
+    const button = document.createElement("a");
+    button.href = "/#typing-mistakes";
     // Reuse the actual menu item's classes so theme, hover and focus match.
     button.className = anchor.className;
     button.setAttribute(marker, "");
@@ -22,17 +22,15 @@
     const icon = document.createElement("i");
     icon.className = "fas fa-chart-bar fa-fw";
     icon.setAttribute("aria-hidden", "true");
-    button.append(icon, document.createTextNode("Local analytics"));
-    button.addEventListener("click", async event => {
-      // The website cannot open extension pages through synthetic clicks.
-      if (!event.isTrusted) return;
-      try {
-        const response = await chrome.runtime.sendMessage({type: "open-dashboard"});
-        if (!response?.ok) throw new Error(response?.error || "Could not open analytics");
-      } catch {
-        button.replaceChildren(document.createTextNode("Reload for analytics"));
-        button.title = "Reload Monkeytype to reconnect the updated extension";
-      }
+    button.append(icon, document.createTextNode("Typing mistakes"));
+    button.addEventListener("click", event => {
+      if (!event.isTrusted || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      void globalThis.MLAIntegration.open().catch(error => {
+        button.title = error.message;
+        button.textContent = "Save pending — try again";
+        setTimeout(() => button.replaceChildren(icon, document.createTextNode("Typing mistakes")), 4000);
+      });
     });
     anchor.after(button);
     currentAnchor = anchor;
