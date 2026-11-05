@@ -26,7 +26,7 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     await page.addInitScript(() => localStorage.setItem('merchBannerClosed3', 'true'));
     await page.goto('https://monkeytype.com/#local-analytics', {waitUntil:'domcontentloaded'});
     const reject = page.getByText('reject non-essential', {exact:true});
-    if (await reject.isVisible()) await reject.click();
+    await reject.click(); await reject.waitFor({state:'hidden'});
     const view = page.locator('[data-mla-page]');
     await view.waitFor(); await page.waitForURL('**/#typing-mistakes');
     await page.waitForFunction(() => document.querySelector('[data-mla-page]')?.shadowRoot.getElementById('tests').textContent === '1');
