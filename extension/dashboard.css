@@ -4,3 +4,6 @@
 .scope,.text-button,.header-actions,.connection,.muted,label{font-size:.8rem}.stats span{font-size:.85rem}table{font-size:.85rem}.sample,.focus-row small,.focus-row .focus-count,.pattern-row .count{font-size:.72rem}.pattern-row,.substitutions summary{font-size:.8rem}
 
 .filters{grid-template-columns:1.2fr 1fr 1fr 125px}.filters label{white-space:nowrap}.mobile-jump{display:none}.more-rows{display:block;width:100%;margin:.8rem 0 0}.scroll-hint{margin:.5rem 0;color:var(--text)}th:first-child,td:first-child{position:sticky;left:0;background:var(--surface);z-index:1;box-shadow:1px 0 var(--line)}.table-wrap{scrollbar-width:thin;scrollbar-color:var(--muted) var(--bg)}#characters-jump{margin-top:1rem}#practice-title:focus,#keys-title:focus{outline:none}@media(max-width:1050px){.mobile-jump{display:inline-block}}@media(max-width:650px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.funbox-filter{display:flex;align-items:center;gap:.45rem;width:fit-content;min-height:2rem;margin-top:.55rem;cursor:pointer}
+.funbox-filter input{width:1rem;height:1rem;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}

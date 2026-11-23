@@ -66,9 +66,11 @@
   }
   window.addEventListener("message", event => {
     if (event.source !== window || event.origin !== location.origin || event.data?.channel !== channel) return;
-    if (event.data.type === "ack" && event.data.value === pending[0]?.id) {
-      pending.shift();
-      if (event.data.value === latestSummaryId) status("Saved — your latest test is in Typing mistakes.");
+    if (event.data.type === "ack" && pending.length && event.data.value === pending[0].id) {
+      const saved = pending.shift();
+      if (saved.id === latestSummaryId) status(saved.otherFunbox
+        ? "Saved — turn on Include other Funboxes in Typing mistakes to see this test."
+        : "Saved — your latest test is in Typing mistakes.");
       if (pending.length) post("summary", pending[0]);
       navigationReady();
     }

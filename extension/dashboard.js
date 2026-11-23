@@ -35,7 +35,7 @@
       if (!loaded || disposed) return;
       const active = root.activeElement;
       const value = {language:$("language").value,layout:$("layout").value,sort:$("sort").value,minimum:$("minimum").value,
-        scroll:window.scrollY,focus:active?.id || "",showAll};
+        includeFunboxes:$("include-funboxes").checked,scroll:window.scrollY,focus:active?.id || "",showAll};
       try {sessionStorage.setItem(prefKey,JSON.stringify(value)); saved = value;} catch { /* No storage permission for preferences is needed. */ }
     }
     function persist() {clearTimeout(persistTimer); persistTimer = setTimeout(savePosition,100);}
@@ -53,6 +53,7 @@
       if (["errors","rate","attempts"].includes(saved.sort)) $("sort").value = saved.sort;
       const min = Number(saved.minimum); if (Number.isSafeInteger(min) && min >= 1 && min <= 1000000) $("minimum").value = String(min);
       showAll = saved.showAll === true;
+      $("include-funboxes").checked = saved.includeFunboxes === true;
       prefsApplied = true;
     }
     const rowNodes = new Map(), expanded = new Set();
@@ -90,7 +91,11 @@
       options("language",new Set(Object.values(state.groups).map(g => g.language)),"All languages");
       options("layout",new Set(Object.values(state.groups).map(g => g.layout)),"All layouts");
       applyPrefs();
-      const groups = Object.values(state.groups).filter(g => (!$("language").value || g.language === $("language").value) && (!$("layout").value || g.layout === $("layout").value));
+      const includeFunboxes = $("include-funboxes").checked;
+      const matchingGroups = Object.values(state.groups).filter(g => (!$("language").value || g.language === $("language").value) && (!$("layout").value || g.layout === $("layout").value));
+      const groups = matchingGroups.filter(g => includeFunboxes || !g.otherFunbox);
+      const hiddenTests = includeFunboxes ? 0 : matchingGroups.reduce((count,g) => count + (g.otherFunbox ? g.tests : 0),0);
+      $("funbox-count").textContent = hiddenTests ? `· ${num(hiddenTests)} hidden` : "";
       const totals = {tests:0,attempts:0,errors:0,extra:0,corrections:0}, map = new Map();
       for (const g of groups) {
         for (const name of Object.keys(totals)) totals[name] += g[name];
@@ -107,7 +112,7 @@
       const minimum = Math.min(1000000,Math.max(1,Number($("minimum").value)||1));
       const sort = $("sort").value, rank = row => sort === "rate" ? row.errors / row.attempts : row[sort];
       const rows = [...map.values()].filter(r => r.attempts >= minimum).sort((a,b)=>rank(b)-rank(a)||b.attempts-a.attempts||a.key.localeCompare(b.key));
-      $("clear").hidden = !$("language").value && !$("layout").value && minimum === 1 && sort === "errors";
+      $("clear").hidden = !$("language").value && !$("layout").value && minimum === 1 && sort === "errors" && !includeFunboxes;
       const visibleRows = narrow.matches && !showAll ? rows.slice(0,8) : rows;
       $("show-more").hidden = !narrow.matches || rows.length <= 8;
       $("show-more").textContent = showAll ? "show fewer characters" : `show all ${rows.length} characters`;
@@ -117,7 +122,7 @@
       $("table-wrap").hidden = !rows.length;
       $("empty").querySelector("a").hidden = state.tests > 0;
       if (!state.tests) {$("empty-title").textContent = "Your first test starts the picture"; $("empty-copy").textContent = "Finish a supported test to record character attempts. Corrected mistakes count too.";}
-      else if (!groups.length) {$("empty-title").textContent = "No tests match these filters"; $("empty-copy").textContent = "Your saved data is still here. Clear the language and layout filters to see it.";}
+      else if (!groups.length) {$("empty-title").textContent = "No tests match these filters"; $("empty-copy").textContent = hiddenTests ? "Turn on Include other Funboxes to view the hidden tests." : "Clear filters to see more of your saved tests.";}
       else if (!rows.length) {$("empty-title").textContent = "No characters meet this minimum"; $("empty-copy").textContent = "Lower the minimum attempts or clear filters to include smaller samples.";}
       renderRows(visibleRows);
       requestAnimationFrame(updateOverflow);
@@ -171,13 +176,13 @@
       finally{busy=false;controlsState();}
     }
     const trusted = event => !embedded || event.isTrusted;
-    for(const id of ["language","layout","sort","minimum"])$(id).addEventListener("input",()=>{render();persist();});
+    for(const id of ["language","layout","sort","minimum","include-funboxes"])$(id).addEventListener("input",()=>{render();persist();});
     $("minimum").addEventListener("blur",()=>{$("minimum").value=String(Math.min(1000000,Math.max(1,Math.trunc(Number($("minimum").value)||1))));render();persist();});
     $("show-more").addEventListener("click",()=>{showAll=!showAll;render();persist();});
     const jump = id => {const target=$(id);target.tabIndex=-1;target.focus({preventScroll:true});target.scrollIntoView({block:"start"});};
     $("focus-jump").addEventListener("click",()=>jump("practice-title"));
     $("characters-jump").addEventListener("click",()=>jump("keys-title"));
-    $("clear").addEventListener("click",()=>{for(const id of ["language","layout"])$(id).value="";$("minimum").value="1";$("sort").value="errors";render();persist();});
+    $("clear").addEventListener("click",()=>{for(const id of ["language","layout"])$(id).value="";$("minimum").value="1";$("sort").value="errors";$("include-funboxes").checked=false;render();persist();});
     const disclose = id => {$(id).open=true;$(id).querySelector("summary").focus();$(id).scrollIntoView({block:"nearest"});};
     $("about").addEventListener("click",()=>disclose("data-details"));$("collection").addEventListener("click",()=>disclose("collection-details"));
     $("retry").addEventListener("click",()=>{clearError();void refresh();});

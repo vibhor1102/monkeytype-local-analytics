@@ -46,12 +46,11 @@ test('excludes unsupported modes, composition, and opposite shift', () => {
   assert.match(analyze(log([], 'cat', {bailedOut: true}), config).skip, /Bailed/);
   assert.match(analyze(log([{type: 'composition', testMs: 10, data: {event: 'start'}}]), config).skip, /Composition/);
   assert.match(analyze(log([], 'cat', {hasKorean: true}), config).skip, /Composition/);
-  assert.match(analyze(log([]), {...config, funbox: ['weakspot']}).skip, /Funbox/);
   assert.match(analyze(log([]), {...config, oppositeShiftMode: 'on'}).skip, /shift/);
 });
-test('counts corrected mistakes with every Read Ahead variant', () => {
+test('counts corrected mistakes normally with each always-included Funbox', () => {
   const testLog = log([insert('x', false, 0), deletion(), insert('c', true, 0)], 'cat ', {isFunboxWithNospacePropertyActive: false});
-  for (const funbox of ['read_ahead_easy', 'read_ahead', 'read_ahead_hard']) {
+  for (const funbox of ['read_ahead_easy', 'read_ahead', 'read_ahead_hard', 'crt', 'no_quit']) {
     const result = analyze(testLog, {...config, funbox: [funbox]});
     assert.deepEqual(result, analyze(testLog, config));
     assert.equal(result.keys.c.attempts, 2);
@@ -59,9 +58,34 @@ test('counts corrected mistakes with every Read Ahead variant', () => {
     assert.equal(result.corrections, 1);
   }
 });
-test('rejects an unsupported Funbox alongside Read Ahead and honors the no-spaces log flag', () => {
-  assert.match(analyze(log([]), {...config, funbox: ['read_ahead_easy', 'layout_mirror']}).skip, /layout mirror/);
-  assert.match(analyze(log([], 'cat', {isFunboxWithNospacePropertyActive: true}), config).skip, /remove spaces/);
+test('saves mixed Funboxes and no-space tests separately from always-included tests', () => {
+  const corrected = [insert('x', false, 0), deletion(), insert('c', true, 0)];
+  const mixed = analyze(log(corrected), {...config, funbox: ['read_ahead_easy', 'layout_mirror']});
+  assert.equal(mixed.otherFunbox, true);
+  assert.deepEqual(mixed.keys.c, analyze(log(corrected), config).keys.c);
+  const noSpace = log([...corrected, insert('a', true, 1), insert('t', true, 2, {commitsWord: true}),
+    insert('d', true, 0, {wordIndex: 1})], 'cat', {isFunboxWithNospacePropertyActive: true});
+  noSpace.context.targetWords.push('dog');
+  const result = analyze(noSpace, config);
+  assert.equal(result.otherFunbox, true);
+  assert.equal(result.attempts, 5);
+  assert.equal(result.keys.t.errors, 0);
+  assert.equal(result.keys[' '], undefined);
+});
+test('old groups and optional Funbox groups remain distinct in backups and deduplication', () => {
+  const state = blank(), s = summary([insert('x', false, 0)]);
+  merge(state, s);
+  const legacy = validateBackup(JSON.parse(JSON.stringify(state)));
+  assert.equal(legacy.groups['["english","default","words"]'].otherFunbox, undefined);
+  assert.equal(merge(legacy, {...s, otherFunbox: true}), false);
+  assert.equal(merge(legacy, {...s, id: 'b'.repeat(64), otherFunbox: true}), true);
+  const restored = validateBackup(JSON.parse(JSON.stringify(legacy)));
+  assert.equal(restored.tests, 2);
+  assert.equal(restored.groups['["english","default","words"]'].tests, 1);
+  assert.equal(restored.groups['["english","default","words","other-funbox"]'].otherFunbox, true);
+  assert.throws(() => validateSummary({...s, otherFunbox: "yes"}), /Funbox classification/);
+  delete restored.groups['["english","default","words","other-funbox"]'].otherFunbox;
+  assert.throws(() => validateBackup(restored), /Invalid backup group/);
 });
 test('deduplicates reloads and merges separate tests while preserving group separation', () => {
   const state = blank(), s = summary([insert('x', false, 0)]);

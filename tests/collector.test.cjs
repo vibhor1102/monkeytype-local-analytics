@@ -7,10 +7,10 @@ async function setup() {
   vm.runInNewContext(fs.readFileSync('extension/collector.js', 'utf8'), {window, document: {querySelector:()=>null, addEventListener: (_, f) => keydown = f}, location: {origin: 'https://monkeytype.com'}, MonkeytypeLocalAnalyticsCore: core, crypto: require('node:crypto').webcrypto, TextEncoder, setTimeout: f => timers.push(f), setInterval: f => interval = f, Date});
   const tick = async () => {interval(); await new Promise(r => setTimeout(r, 15));};
   return {posts, window, tick, fail: () => failHook = true,
-    finish: async date => {
+    finish: async (date, context = {}) => {
       const start = {type: 'timer', testMs: 0, data: {event: 'start', date}};
       active = {events: [start]}; keydown({isTrusted: true}); timers.splice(0).forEach(f => f());
-      completed = {version: 1, context: {mode: 'words', targetWords: ['cat ']}, events: [start, {type: 'input', testMs: 1, data: {inputType: 'insertText', wordIndex: 0, charIndex: 0, data: 'x', correct: false}}, {type: 'timer', testMs: 2, data: {event: 'end', date: date + 2}}]};
+      completed = {version: 1, context: {mode: 'words', targetWords: ['cat '], ...context}, events: [start, {type: 'input', testMs: 1, data: {inputType: 'insertText', wordIndex: 0, charIndex: 0, data: 'x', correct: false}}, {type: 'timer', testMs: 2, data: {event: 'end', date: date + 2}}]};
     }, navigate: token => message({source: window, origin: 'https://monkeytype.com', data: {channel: 'monkeytype-local-analytics-v1', type: 'navigate-request', value: token}}), ack: id => message({source: window, origin: 'https://monkeytype.com', data: {channel: 'monkeytype-local-analytics-v1', type: 'ack', value: id}})};
 }
 test('queued tests survive a failed first save and retain captured settings', async () => {
@@ -27,19 +27,29 @@ test('hook exceptions become visible status rather than unhandled errors', async
   const c = await setup(); c.fail(); await c.tick(); assert.match(c.posts.at(-1).value, /hook failed/);
 });
 
-test('an older save acknowledgement cannot cover up a newer skipped Funbox test', async () => {
+test('an older save acknowledgement cannot cover up a newer skipped test', async () => {
   const c = await setup();
   c.window.config.funbox = ['read_ahead_easy'];
   await c.finish(100); await c.tick();
   const first = c.posts.find(p => p.type === 'summary').value;
   assert.equal(first.errors, 1);
-  c.window.config.funbox = ['read_ahead_easy', 'layout_mirror'];
-  await c.finish(200);
-  c.window.config.funbox = [];
+  await c.finish(200, {mode:'zen'});
   await c.tick();
   c.ack(first.id);
-  assert.match(c.posts.filter(p => p.type === 'status').at(-1).value, /^Test not saved.*layout mirror/);
+  assert.match(c.posts.filter(p => p.type === 'status').at(-1).value, /^Test not saved.*Zen/);
   assert.ok(c.posts.filter(p => p.type === 'summary').every(p => p.value.id === first.id));
+});
+
+test('collects the active Funbox regardless of settings changes before the save', async () => {
+  const c = await setup();
+  c.window.config.funbox = ['weakspot'];
+  await c.finish(100);
+  c.window.config.funbox = [];
+  await c.tick();
+  const summary = c.posts.find(p => p.type === 'summary').value;
+  assert.equal(summary.otherFunbox, true);
+  c.ack(summary.id);
+  assert.match(c.posts.at(-1).value, /^Saved.*Include other Funboxes/);
 });
 
 test('navigation flush waits for completed summary acknowledgement before allowing unload', async () => {

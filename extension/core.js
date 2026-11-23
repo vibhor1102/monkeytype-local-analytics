@@ -5,8 +5,14 @@
   const dict = () => Object.create(null);
   const label = (value, fallback) => typeof value === "string" && value.length <= 100 ? value : fallback;
   const blank = () => ({version: 1, groups: {}, seen: [], tests: 0, updated: null});
-  // These three modes only change which words are visible, including on Backspace.
-  const supportedFunboxes = new Set(["read_ahead_easy", "read_ahead", "read_ahead_hard"]);
+  // Read Ahead changes word visibility, CRT changes styling, and No Quit limits restarting.
+  const alwaysIncludedFunboxes = new Set(["read_ahead_easy", "read_ahead", "read_ahead_hard", "crt", "no_quit"]);
+
+  function groupId(group) {
+    const parts = [group.language, group.layout, group.mode];
+    if (group.otherFunbox) parts.push("other-funbox");
+    return JSON.stringify(parts);
+  }
 
   function analyze(log, config = {}) {
     if (!log || log.version !== 1 || !Array.isArray(log.events) || !Array.isArray(log.context?.targetWords)) {
@@ -21,10 +27,8 @@
     if (log.context.hasKorean || log.context.koreanStatus || log.events.some(e => e.type === "composition" || e.data?.isCompositionEnding || e.data?.inputType === "insertCompositionText")) {
       return {skip: "Composition input is not supported yet."};
     }
-    for (const name of config.funbox ?? []) {
-      if (!supportedFunboxes.has(name)) return {skip: `This Funbox is not supported yet (${label(name, "unknown").replaceAll("_", " ")}).`};
-    }
-    if (log.context.isFunboxWithNospacePropertyActive) return {skip: "Funboxes that remove spaces are not supported yet."};
+    const otherFunbox = log.context.isFunboxWithNospacePropertyActive ||
+      (config.funbox ?? []).some(name => !alwaysIncludedFunboxes.has(name));
     if (config.oppositeShiftMode && config.oppositeShiftMode !== "off") return {skip: "Opposite-shift tests are excluded."};
     const start = log.events.find(e => e.type === "timer" && e.data?.event === "start");
     const end = log.events.find(e => e.type === "timer" && e.data?.event === "end");
@@ -65,6 +69,7 @@
       language: label(config.language, "unknown"),
       layout: label(config.layout, "default"),
       mode: label(log.context.mode, "unknown"),
+      ...(otherFunbox ? {otherFunbox: true} : {}),
       keys, attempts, errors, extra, corrections
     };
   }
@@ -72,6 +77,7 @@
   function validateSummary(s, maximumAttempts = 1000000) {
     if (!s || !/^[a-f0-9]{64}$/.test(s.id) || !Number.isFinite(s.started) || !Number.isFinite(s.ended)) throw new Error("Invalid test identity.");
     for (const name of ["language", "layout", "mode"]) if (typeof s[name] !== "string" || !s[name].length || s[name].length > 100) throw new Error("Invalid test settings.");
+    if (s.otherFunbox !== undefined && s.otherFunbox !== true) throw new Error("Invalid Funbox classification.");
     let attempts = 0, errors = 0;
     if (!s.keys || typeof s.keys !== "object" || Array.isArray(s.keys) || Object.keys(s.keys).length > 1000) throw new Error("Invalid character data.");
     for (const [key, row] of Object.entries(s.keys)) {
@@ -96,12 +102,13 @@
     const original = state;
     state = structuredClone(state);
     if (state.seen.includes(summary.id)) return false;
-    const groupId = JSON.stringify([summary.language, summary.layout, summary.mode]);
-    if (!own(state.groups, groupId)) state.groups[groupId] = {
+    const id = groupId(summary);
+    if (!own(state.groups, id)) state.groups[id] = {
       language: summary.language, layout: summary.layout, mode: summary.mode,
+      ...(summary.otherFunbox ? {otherFunbox: true} : {}),
       tests: 0, attempts: 0, errors: 0, extra: 0, corrections: 0, keys: dict()
     };
-    const group = state.groups[groupId];
+    const group = state.groups[id];
     for (const [key, row] of Object.entries(summary.keys)) {
       if (!own(group.keys, key)) group.keys[key] = {attempts: 0, errors: 0, substitutions: dict()};
       const dest = group.keys[key];
@@ -122,7 +129,7 @@
     if (Object.keys(state.groups).length > 5000) throw new Error("Too many backup groups.");
     let tests = 0, lifetimeAttempts = 0;
     for (const [id, g] of Object.entries(state.groups)) {
-      if (id !== JSON.stringify([g.language, g.layout, g.mode]) || !Number.isSafeInteger(g.tests) || g.tests < 1) throw new Error("Invalid backup group.");
+      if (!g || id !== groupId(g) || !Number.isSafeInteger(g.tests) || g.tests < 1) throw new Error("Invalid backup group.");
       validateSummary({...g, id: "0".repeat(64), started: 0, ended: 0}, Number.MAX_SAFE_INTEGER);
       tests += g.tests; lifetimeAttempts += g.attempts;
     }
@@ -135,6 +142,7 @@
         attempts: row.attempts, errors: row.errors, substitutions: Object.fromEntries(Object.entries(row.substitutions))
       };
       groups[id] = Object.fromEntries(["language", "layout", "mode", "tests", "attempts", "errors", "extra", "corrections"].map(k => [k, g[k]]));
+      if (g.otherFunbox) groups[id].otherFunbox = true;
       groups[id].keys = keys;
     }
     return {version: 1, groups, seen: [...state.seen], tests, updated: state.updated};

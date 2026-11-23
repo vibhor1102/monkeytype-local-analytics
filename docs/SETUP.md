@@ -16,13 +16,13 @@ Counts belong to the character Monkeytype expected. If **c** was expected and yo
 
 Practice suggestions need at least **20 attempts per character**. The table still shows smaller samples. Use **clear filters** if you’ve hidden rows, and scroll sideways in narrow windows for all columns.
 
-**Read Ahead Easy, Read Ahead, and Read Ahead Hard** are supported from version 1.4.1. If another Funbox is active, the test is skipped. Click **test not saved** on the Typing mistakes page to see why.
+Funbox tests save automatically. Turn on **Include other Funboxes** to count them in the totals, character breakdown, and practice suggestions. The three Read Ahead modes, CRT, and No Quit count in both settings. When a test mixes one of those modes with another Funbox, it follows the toggle.
 
 Collection starts with your next supported test. Zen, abandoned tests, opposite-shift, composition/IME input, and some characters such as emoji are excluded. Past account results don’t contain the character-by-character data needed to rebuild these stats.
 
 ## Backups and updates
 
-Expand **backups & data** near the bottom of Typing mistakes. **Export backup** downloads a JSON file; keep it somewhere safe. **Restore backup** replaces current stats rather than merging them. Reset and restore keep one **previous snapshot**, but restoring it can also replace newer tests. Export first.
+Expand **backups & data** near the bottom of Typing mistakes. **Export backup** saves all recorded tests, including hidden Funbox stats. **Restore backup** replaces your current stats. Reset and restore keep one **previous snapshot**, which can replace newer tests. Export first. Backups containing other Funbox stats require version 1.5.0 or later.
 
 To update:
 

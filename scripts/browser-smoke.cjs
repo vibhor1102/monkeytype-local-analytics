@@ -50,6 +50,9 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     await page.evaluate(() => document.documentElement.style.removeProperty('--main-color'));
     await view.locator('#minimum').fill('2'); await page.keyboard.type('0'); await page.keyboard.press('Tab'); await page.keyboard.press('Space');
     assert.equal(await page.evaluate(() => window.currentEventLog?.()?.events?.some(e => e.type === 'timer' && e.data.event === 'start') || false), false);
+    const include = view.getByRole('checkbox', {name:'Include other Funboxes'});
+    assert.equal(await include.isChecked(), true);
+    await include.uncheck();
     for (const shortcut of ['Escape', 'Escape', 'Control+Shift+P']) {
       await view.locator('#minimum').focus(); await page.keyboard.press(shortcut);
       await page.locator('#CommandlineModal input').waitFor({state:'visible'}); await page.keyboard.press('Escape');
@@ -101,20 +104,57 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     assert.equal(state.tests,2); assert.equal(Object.values(state.groups).reduce((n,g)=>n+g.errors,0),5);
     assert.equal(Object.values(state.groups).reduce((n,g)=>n+g.corrections,0),5);
     await recovery.reload(); await recovery.waitForFunction(() => document.getElementById('tests').textContent === '2');
-    // Set the native preference in this disposable profile, then type a real test.
-    await page.evaluate(() => {
-      const config = JSON.parse(localStorage.getItem('config'));
-      config.funbox = ['read_ahead_easy'];
-      localStorage.setItem('config', JSON.stringify(config));
-    });
-    await page.reload();
-    await page.waitForFunction(() => window.config?.funbox?.includes('read_ahead_easy'));
-    await page.waitForTimeout(1200);
+    // Set native preferences in this disposable profile, then type real tests.
+    const selectFunbox = async name => {
+      await page.evaluate(name => {
+        const config = JSON.parse(localStorage.getItem('config'));
+        config.funbox = [name];
+        config.words = 10;
+        localStorage.setItem('config', JSON.stringify(config));
+      }, name);
+      await page.reload();
+      await page.waitForFunction(name => window.config?.funbox?.includes(name), name);
+      await page.waitForTimeout(1200);
+    };
+    await selectFunbox('read_ahead_easy');
     await finishCorrectedTest();
     await recovery.waitForFunction(() => document.getElementById('tests').textContent === '3');
     const readAhead = (await recovery.evaluate(() => chrome.storage.local.get('analytics'))).analytics;
     assert.equal(Object.values(readAhead.groups).reduce((n,g)=>n+g.errors,0),6);
     assert.equal(Object.values(readAhead.groups).reduce((n,g)=>n+g.corrections,0),6);
+    await selectFunbox('capitals');
+    await page.waitForFunction(() => /^[A-Z]/.test(document.querySelector('#words .word')?.textContent ?? ''));
+    await finishCorrectedTest();
+    await recovery.getByRole('checkbox', {name:'Include other Funboxes'}).check();
+    await recovery.waitForFunction(() => document.getElementById('tests').textContent === '4');
+    const all = (await recovery.evaluate(() => chrome.storage.local.get('analytics'))).analytics;
+    const optional = Object.values(all.groups).find(g => g.otherFunbox);
+    assert.ok(optional, 'Capitals should be saved in a Funbox group');
+    assert.equal(optional.tests, 1);
+    assert.equal(optional.errors, 1);
+    assert.equal(optional.corrections, 1);
+    await page.goto('https://monkeytype.com/#typing-mistakes'); await view.waitFor();
+    const waitForTotal = total => page.waitForFunction(total => {
+      const root = document.querySelector('[data-mla-page]')?.shadowRoot;
+      return root?.getElementById('tests')?.textContent === total;
+    }, total);
+    await waitForTotal('3');
+    assert.match(await view.locator('#funbox-count').innerText(), /1 hidden/);
+    assert.equal(await view.locator('#errors').innerText(), '6');
+    await include.focus();
+    await page.keyboard.press('Space');
+    assert.equal(await include.isChecked(), true);
+    assert.equal(await view.locator('#tests').innerText(), '4');
+    assert.equal(await view.locator('#errors').innerText(), '7');
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('mla:view:v2') || '{}').includeFunboxes === true);
+    await page.reload(); await view.waitFor();
+    await waitForTotal('4');
+    assert.equal(await include.isChecked(), true);
+    await include.uncheck();
+    assert.equal(await view.locator('#tests').innerText(), '3');
+    const restored = await recovery.evaluate(value => chrome.runtime.sendMessage({type:'restore',value}), core.validateBackup(all));
+    assert.equal(restored.ok, true);
+    assert.equal((await recovery.evaluate(() => chrome.storage.local.get('analytics'))).analytics.tests, 4);
     // An extension reload must not strand the site's routed content hidden.
     await page.goto('https://monkeytype.com/#typing-mistakes'); await view.waitFor();
     const manager = await context.newPage(); await manager.goto('chrome://extensions');
@@ -122,6 +162,6 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     await page.locator('[data-nav-item="settings"]').click(); await page.locator('#pageSettings').waitFor({state:'visible'});
     await page.waitForFunction(() => !document.querySelector('[data-mla-page]'));
     assert.deepEqual(errors, []);
-    console.log('PASS: hash/bookmark migration, native shell/font, live light/custom themes, keyboard isolation, safe controls, mobile, SPA/back/reload, menu same-tab navigation during test, and corrected collection in standard and Read Ahead Easy tests.');
+    console.log('PASS: native integration, corrected collection in standard and Funbox tests, keyboard toggle, filter persistence, and backup restore.');
   } finally {await context.close(); fs.rmSync(profile, {recursive:true, force:true});}
 })().catch(error => {console.error(error); process.exitCode=1;});
