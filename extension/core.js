@@ -5,6 +5,8 @@
   const dict = () => Object.create(null);
   const label = (value, fallback) => typeof value === "string" && value.length <= 100 ? value : fallback;
   const blank = () => ({version: 1, groups: {}, seen: [], tests: 0, updated: null});
+  // These three modes only change which words are visible, including on Backspace.
+  const supportedFunboxes = new Set(["read_ahead_easy", "read_ahead", "read_ahead_hard"]);
 
   function analyze(log, config = {}) {
     if (!log || log.version !== 1 || !Array.isArray(log.events) || !Array.isArray(log.context?.targetWords)) {
@@ -16,10 +18,13 @@
     }
     if (log.context.mode === "zen") return {skip: "Zen has no target text."};
     if (log.context.bailedOut) return {skip: "Bailed-out tests are excluded."};
-    if (log.context.koreanStatus || log.events.some(e => e.type === "composition" || e.data?.isCompositionEnding || e.data?.inputType === "insertCompositionText")) {
+    if (log.context.hasKorean || log.context.koreanStatus || log.events.some(e => e.type === "composition" || e.data?.isCompositionEnding || e.data?.inputType === "insertCompositionText")) {
       return {skip: "Composition input is not supported yet."};
     }
-    if (Array.isArray(config.funbox) && config.funbox.length) return {skip: "Funbox tests are excluded."};
+    for (const name of config.funbox ?? []) {
+      if (!supportedFunboxes.has(name)) return {skip: `This Funbox is not supported yet (${label(name, "unknown").replaceAll("_", " ")}).`};
+    }
+    if (log.context.isFunboxWithNospacePropertyActive) return {skip: "Funboxes that remove spaces are not supported yet."};
     if (config.oppositeShiftMode && config.oppositeShiftMode !== "off") return {skip: "Opposite-shift tests are excluded."};
     const start = log.events.find(e => e.type === "timer" && e.data?.event === "start");
     const end = log.events.find(e => e.type === "timer" && e.data?.event === "end");

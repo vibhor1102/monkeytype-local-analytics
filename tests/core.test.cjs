@@ -45,8 +45,23 @@ test('excludes unsupported modes, composition, and opposite shift', () => {
   assert.match(analyze(log([], 'cat', {mode: 'zen'}), config).skip, /Zen/);
   assert.match(analyze(log([], 'cat', {bailedOut: true}), config).skip, /Bailed/);
   assert.match(analyze(log([{type: 'composition', testMs: 10, data: {event: 'start'}}]), config).skip, /Composition/);
+  assert.match(analyze(log([], 'cat', {hasKorean: true}), config).skip, /Composition/);
   assert.match(analyze(log([]), {...config, funbox: ['weakspot']}).skip, /Funbox/);
   assert.match(analyze(log([]), {...config, oppositeShiftMode: 'on'}).skip, /shift/);
+});
+test('counts corrected mistakes with every Read Ahead variant', () => {
+  const testLog = log([insert('x', false, 0), deletion(), insert('c', true, 0)], 'cat ', {isFunboxWithNospacePropertyActive: false});
+  for (const funbox of ['read_ahead_easy', 'read_ahead', 'read_ahead_hard']) {
+    const result = analyze(testLog, {...config, funbox: [funbox]});
+    assert.deepEqual(result, analyze(testLog, config));
+    assert.equal(result.keys.c.attempts, 2);
+    assert.equal(result.keys.c.errors, 1);
+    assert.equal(result.corrections, 1);
+  }
+});
+test('rejects an unsupported Funbox alongside Read Ahead and honors the no-spaces log flag', () => {
+  assert.match(analyze(log([]), {...config, funbox: ['read_ahead_easy', 'layout_mirror']}).skip, /layout mirror/);
+  assert.match(analyze(log([], 'cat', {isFunboxWithNospacePropertyActive: true}), config).skip, /remove spaces/);
 });
 test('deduplicates reloads and merges separate tests while preserving group separation', () => {
   const state = blank(), s = summary([insert('x', false, 0)]);

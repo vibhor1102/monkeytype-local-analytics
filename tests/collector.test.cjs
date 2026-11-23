@@ -27,6 +27,21 @@ test('hook exceptions become visible status rather than unhandled errors', async
   const c = await setup(); c.fail(); await c.tick(); assert.match(c.posts.at(-1).value, /hook failed/);
 });
 
+test('an older save acknowledgement cannot cover up a newer skipped Funbox test', async () => {
+  const c = await setup();
+  c.window.config.funbox = ['read_ahead_easy'];
+  await c.finish(100); await c.tick();
+  const first = c.posts.find(p => p.type === 'summary').value;
+  assert.equal(first.errors, 1);
+  c.window.config.funbox = ['read_ahead_easy', 'layout_mirror'];
+  await c.finish(200);
+  c.window.config.funbox = [];
+  await c.tick();
+  c.ack(first.id);
+  assert.match(c.posts.filter(p => p.type === 'status').at(-1).value, /^Test not saved.*layout mirror/);
+  assert.ok(c.posts.filter(p => p.type === 'summary').every(p => p.value.id === first.id));
+});
+
 test('navigation flush waits for completed summary acknowledgement before allowing unload', async () => {
   const c = await setup(); await c.finish(300); c.navigate('route-token'); await c.tick();
   assert.equal(c.posts.some(p => p.type === 'navigation-ready'), false);

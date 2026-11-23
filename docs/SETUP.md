@@ -2,7 +2,7 @@
 
 ## Install
 
-1. Open the [latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest). Under **Assets**, download **monkeytype-local-analytics-1.4.0.zip**, not “Source code”.
+1. Open the [latest release](https://github.com/vibhor1102/monkeytype-local-analytics/releases/latest). Under **Assets**, download the ZIP named **monkeytype-local-analytics** followed by the version number.
 2. Extract it to a folder you’ll keep. Chrome loads the extension from that folder, so don’t delete or move it afterwards.
 3. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the folder with `manifest.json` directly inside it. **Monkeytype Typing Mistakes** should appear and be enabled.
 4. Reload Monkeytype and finish a new **words** or **time** test with Funbox off.
@@ -16,7 +16,9 @@ Counts belong to the character Monkeytype expected. If **c** was expected and yo
 
 Practice suggestions need at least **20 attempts per character**. The table still shows smaller samples. Use **clear filters** if you’ve hidden rows, and scroll sideways in narrow windows for all columns.
 
-Only new completed standard tests are recorded. Zen, abandoned tests, Funbox, opposite-shift, composition/IME input, and some Unicode characters such as emoji are excluded. Past account results can’t be imported.
+**Read Ahead Easy, Read Ahead, and Read Ahead Hard** are supported from version 1.4.1. If another Funbox is active, the test is skipped. Click **test not saved** on the Typing mistakes page to see why.
+
+Collection starts with your next supported test. Zen, abandoned tests, opposite-shift, composition/IME input, and some characters such as emoji are excluded. Past account results don’t contain the character-by-character data needed to rebuild these stats.
 
 ## Backups and updates
 

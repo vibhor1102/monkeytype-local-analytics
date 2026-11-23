@@ -53,7 +53,6 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       const {analytics = core.blank()} = await chrome.storage.local.get("analytics");
       const added = core.merge(analytics, message.value);
       if (added) await chrome.storage.local.set({analytics, dataRevision:crypto.randomUUID()});
-      await saveStatus(sender.tab.id, "Saved — your latest test is in Typing mistakes.");
       return {ok: true, added};
     }
     // No view operations are exposed by the page-message relay. Only this extension's

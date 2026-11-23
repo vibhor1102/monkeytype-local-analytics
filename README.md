@@ -14,7 +14,7 @@ It adds a **Typing mistakes** page inside Monkeytype, using your theme and font.
 
 ## Install
 
-1. Download **monkeytype-local-analytics-1.4.0.zip** and extract it to a permanent folder.
+1. Download the **monkeytype-local-analytics** ZIP under **Assets** and extract it to a permanent folder.
 2. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the folder containing `manifest.json`.
 3. Reload Monkeytype and finish a new standard test. Open **Typing mistakes** below **User stats**, or use the extension’s toolbar button without signing in.
 

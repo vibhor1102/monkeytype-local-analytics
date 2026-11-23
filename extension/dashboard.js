@@ -116,7 +116,7 @@
       $("empty").hidden = !!rows.length;
       $("table-wrap").hidden = !rows.length;
       $("empty").querySelector("a").hidden = state.tests > 0;
-      if (!state.tests) {$("empty-title").textContent = "Your first test starts the picture"; $("empty-copy").textContent = "Finish a standard test to record character attempts. Corrected mistakes count too.";}
+      if (!state.tests) {$("empty-title").textContent = "Your first test starts the picture"; $("empty-copy").textContent = "Finish a supported test to record character attempts. Corrected mistakes count too.";}
       else if (!groups.length) {$("empty-title").textContent = "No tests match these filters"; $("empty-copy").textContent = "Your saved data is still here. Clear the language and layout filters to see it.";}
       else if (!rows.length) {$("empty-title").textContent = "No characters meet this minimum"; $("empty-copy").textContent = "Lower the minimum attempts or clear filters to include smaller samples.";}
       renderRows(visibleRows);
@@ -139,7 +139,8 @@
       const reports = embedded ? [all[result.currentTabId]].filter(Boolean) : Object.values(all);
       const recent = reports.filter(s=>Date.now()-s.at<45000), message = recent.map(s=>s.message).join(" · ");
       const normal = recent.length>0 && recent.every(s=>/^(Connected|Ready|Saved)/.test(s.message));
-      $("connection-label").textContent = normal ? (/Saved/.test(message)?"saved locally":"connected") : message ? "collection notice" : Date.now()-mountedAt<30000?"connecting":"not connected";
+      const skipped = recent.some(s=>s.message.startsWith("Test not saved."));
+      $("connection-label").textContent = skipped ? "test not saved" : normal ? (/Saved/.test(message)?"saved locally":"connected") : message ? "collection notice" : Date.now()-mountedAt<30000?"connecting":"not connected";
       $("collection").dataset.warning = String(!!message && !normal);
       $("status").textContent = message || (embedded?"No recent status from this typing tab. Reload it after updating the extension.":"No recent status from connected Monkeytype tabs. Reload them after updating the extension.");
     }

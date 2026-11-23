@@ -79,19 +79,42 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     const pages = context.pages().length;
     await menu.click(); await view.waitFor(); assert.equal(context.pages().length,pages);
     assert.equal(await page.evaluate(() => window.currentEventLog?.()?.events?.some(e => e.type === 'timer' && e.data.event === 'start') || false),false);
-    // Return to typing, complete a corrected test, and verify collection still works.
+    const finishCorrectedTest = async () => {
+      const previousEnd = await page.evaluate(() => window.lastEventLog?.()?.events.find(e => e.type === 'timer' && e.data.event === 'end')?.data.date ?? null);
+      const words = await page.locator('#words .word').allTextContents();
+      assert.ok(words.length > 0);
+      await page.locator('#typingTest').click();
+      await page.keyboard.type(words[0][0] === 'x' ? 'z' : 'x', {delay:100});
+      await page.keyboard.press('Backspace');
+      await page.keyboard.type(words.join(' ') + ' ', {delay:80});
+      await page.waitForFunction(before => {
+        const end = window.lastEventLog?.()?.events.find(e => e.type === 'timer' && e.data.event === 'end');
+        return end && end.data.date !== before;
+      }, previousEnd);
+    };
+    // Return to typing and verify a corrected standard test is saved.
     await view.locator('.back').click(); await page.locator('#typingTest').waitFor({state:'visible'});
     await page.getByText('words', {exact:true}).click(); await page.waitForTimeout(1200);
-    const words = await page.locator('#words .word').allTextContents();
-    await page.locator('#typingTest').click();
-    const first = words[0][0]; await page.keyboard.type(first === 'x' ? 'z' : 'x', {delay:100}); await page.keyboard.press('Backspace');
-    await page.keyboard.type(words.join(' ') + ' ', {delay:80});
-    await page.waitForFunction(() => window.lastEventLog?.()?.events?.some(e => e.type === 'timer' && e.data.event === 'end'));
+    await finishCorrectedTest();
     await recovery.waitForFunction(() => document.getElementById('tests').textContent === '2');
     const state = (await recovery.evaluate(() => chrome.storage.local.get('analytics'))).analytics;
     assert.equal(state.tests,2); assert.equal(Object.values(state.groups).reduce((n,g)=>n+g.errors,0),5);
     assert.equal(Object.values(state.groups).reduce((n,g)=>n+g.corrections,0),5);
     await recovery.reload(); await recovery.waitForFunction(() => document.getElementById('tests').textContent === '2');
+    // Set the native preference in this disposable profile, then type a real test.
+    await page.evaluate(() => {
+      const config = JSON.parse(localStorage.getItem('config'));
+      config.funbox = ['read_ahead_easy'];
+      localStorage.setItem('config', JSON.stringify(config));
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.config?.funbox?.includes('read_ahead_easy'));
+    await page.waitForTimeout(1200);
+    await finishCorrectedTest();
+    await recovery.waitForFunction(() => document.getElementById('tests').textContent === '3');
+    const readAhead = (await recovery.evaluate(() => chrome.storage.local.get('analytics'))).analytics;
+    assert.equal(Object.values(readAhead.groups).reduce((n,g)=>n+g.errors,0),6);
+    assert.equal(Object.values(readAhead.groups).reduce((n,g)=>n+g.corrections,0),6);
     // An extension reload must not strand the site's routed content hidden.
     await page.goto('https://monkeytype.com/#typing-mistakes'); await view.waitFor();
     const manager = await context.newPage(); await manager.goto('chrome://extensions');
@@ -99,6 +122,6 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'typing-mistakes-'));
     await page.locator('[data-nav-item="settings"]').click(); await page.locator('#pageSettings').waitFor({state:'visible'});
     await page.waitForFunction(() => !document.querySelector('[data-mla-page]'));
     assert.deepEqual(errors, []);
-    console.log('PASS: hash/bookmark migration, native shell/font, live light/custom themes, keyboard isolation, safe controls, mobile, SPA/back/reload, menu same-tab navigation during test, corrected live collection and persistence.');
+    console.log('PASS: hash/bookmark migration, native shell/font, live light/custom themes, keyboard isolation, safe controls, mobile, SPA/back/reload, menu same-tab navigation during test, and corrected collection in standard and Read Ahead Easy tests.');
   } finally {await context.close(); fs.rmSync(profile, {recursive:true, force:true});}
 })().catch(error => {console.error(error); process.exitCode=1;});
